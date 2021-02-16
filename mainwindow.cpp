@@ -5,7 +5,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QStandardPaths>
-
+#include <windows.h>
 
 using namespace std;
 
@@ -38,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
         QString b=path1.first()+"/Saved Games/Frontier Developments/Elite Dangerous/"+i;
         baseabsolute.push_back(b);
     }
+    originalContent=basenames;
     notifier->addPaths(baseabsolute);
     connect(notifier,SIGNAL(directoryChanged(QString)),this,SLOT(OnNewFile(QString)));
     connect(notifier,SIGNAL(fileChanged(const QString &)),this,SLOT(OnNewEvent(const QString &)));
@@ -45,36 +46,83 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 void MainWindow::OnNewFile(const QString &file) {
-    notifier->addPath(file);
+    QDir directory(file);
+    QString full;
+    bool found=false;
+    for (auto i:directory.entryList()) {
+        if (originalContent.contains(i)) {
+            continue;
+        } else {
+            if (i.contains(".log")) {
+                full=file+"/"+i;
+                found=true;
+                break;
+            }
+        }
+    }
+    if (!found)
+        return;
+    originalContent=directory.entryList();
+    qDebug()<<full;
+    notifier->addPath(full);
 }
 
 void MainWindow::OnNewEvent(const QString &file) {
+    /*if (checkingifdone) {
+        therewasanother=true;
+        return;
+    } else {
+        checkingifdone=true;
+    }
+    for (int i=0;i<100;i++) {
+        Sleep(10);
+        if (therewasanother) {
+            qDebug()<<"restarted counter";
+            i=0;
+            therewasanother=false;
+        }
+    }
+    checkingifdone=false;*/
     QFile changed(file);
+    qDebug()<<"event started file opened";
     if (changed.open(QIODevice::ReadOnly)) {
         QTextStream stream(&changed);
-        QString lastEvent;
-        //QString lastenter;
+        QString lastEvent="";
+        json temp;
+        json event;
         while (!stream.atEnd()) {
             lastEvent=stream.readLine();
-        }
-        json event;
-        try {
-            event=json::parse(lastEvent.toStdString());
-        }  catch (const std::exception& e) {
-            qDebug()<<e.what();
-            return;
-        }
-        if ((string)event["event"]=="MissionAccepted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
-            MissionTargetFactions.insert((string)event["TargetFaction"]);
-            addMission((string)event["DestinationSystem"],(int)event["KillCount"],(double)event["Reward"]/1000000,(unsigned)event["MissionID"],QString::fromStdString((string)event["Faction"]));
-        } else if ((string)event["event"]=="MissionRedirected" && ((string)event["Name"]).find("Massacre")!=string::npos) {
-            missionCompleted((unsigned)event["MissionID"]);
-        } else if ((string)event["event"]=="MissionCompleted") {
-            missionCompleted((unsigned)event["MissionID"],true);
-        } else if ((string)event["event"]=="Docked") {
-            current_station=event;
-        } else {
-            return;
+            try {
+                temp=json::parse(lastEvent.toStdString());
+                qDebug()<<lastEvent+"   parsed";
+            }  catch (const std::exception& e) {
+                qDebug()<<lastEvent;
+                qDebug()<<e.what();
+                return;
+            }
+            bool found=false;
+            for (auto k=events.begin();k!=events.end();k++) {
+                if (k.value()==temp) {
+                    qDebug()<<"skipping since event already loaded";
+                    found=true;
+                    break;
+                }
+            }
+            if (!found) {
+                event=temp;
+                events.push_back(event);
+                qDebug()<<"actually doing something";
+                if ((string)event["event"]=="MissionAccepted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
+                    MissionTargetFactions.insert((string)event["TargetFaction"]);
+                    addMission((string)event["DestinationSystem"],(int)event["KillCount"],(double)event["Reward"]/1000000,(unsigned)event["MissionID"],QString::fromStdString((string)event["Faction"]));
+                } else if ((string)event["event"]=="MissionRedirected" && ((string)event["Name"]).find("Massacre")!=string::npos) {
+                    missionCompleted((unsigned)event["MissionID"]);
+                } else if ((string)event["event"]=="MissionCompleted") {
+                    missionCompleted((unsigned)event["MissionID"],true);
+                } else if ((string)event["event"]=="Docked") {
+                    current_station=event;
+                }
+            }
         }
     }
 }

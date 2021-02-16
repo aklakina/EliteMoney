@@ -78,6 +78,9 @@ private:
     void missionCompleted(unsigned ID,bool remove=false);
     void displayData(unsigned *ID=nullptr,bool remove=false);
     void completedData();
+    QStringList originalContent;
+    json events;
+    bool checkingifdone,therewasanother;
     /*void findInJson(string ID);
     bool changed=false;*/
 };
