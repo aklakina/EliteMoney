@@ -5,6 +5,8 @@
 #include <QListWidget>
 #include "json.hpp"
 #include <QTreeWidget>
+#include <QFileSystemWatcher>
+#include <set>
 
 using json=nlohmann::json;
 using namespace std;
@@ -40,8 +42,6 @@ private slots:
 
     void on_pushButton_6_clicked();
 
-    void on_pushButton_7_clicked();
-
     void on_pushButton_2_clicked();
 
     void on_pushButton_clicked();
@@ -50,6 +50,10 @@ private slots:
 
     void on_pushButton_9_clicked();
 
+    void OnNewEvent(const QString &file);
+
+    void OnNewFile(const QString &file);
+
 private:
     Ui::MainWindow *ui;
     int selecteditem=0;
@@ -57,7 +61,7 @@ private:
     json config;
     void configreader(QTreeWidgetItem* item, string &a);
     void refreshdata(int depth=0, json *a=nullptr);
-    map<QString,pair<vector<pair<unsigned,pair<int,double>>>,pair<int,double>>> missions;
+    map<QString,pair<vector<pair<unsigned,pair<int,pair<double,bool>>>>,pair<int,double>>> missions;
     void firsttreefiller();
     double total_kills=0;
     double max_kills=0;
@@ -65,5 +69,16 @@ private:
     unsigned total_mission_count=0;
     void GarbageCollector();
     void deleteing(QTreeWidgetItem*a);
+    QFileSystemWatcher *notifier;
+    void addMission(string dest,int kills, double reward, unsigned ID,QString faction);
+    set<string> MissionTargetFactions;
+    //json current_system;
+    json current_station;
+    void CheckCurrentStation(QString &faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
+    void missionCompleted(unsigned ID,bool remove=false);
+    void displayData(unsigned *ID=nullptr,bool remove=false);
+    void completedData();
+    /*void findInJson(string ID);
+    bool changed=false;*/
 };
 #endif // MAINWINDOW_H
