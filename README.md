@@ -1,11 +1,9 @@
 # EliteMoney
 Mission overview program for Elite Dangerous massacre
 # Usage
+You need to open this application first and after this open Elite in order so it can gather the required data. (Only needed to run first if you are docked to a station where you want to pickup missions from)
 ## Adding missions
-On the first tab you can add missions to the data.
-By default after loaded the system you wish to use the program selects the first options in each sub window. You can select different ones by clicking on them.
-After you have selected the correct faction set the required kill and credit reward and click add mission. This will refresh the whole data as well as the display at the bottom.
-For removing mission you need to click on the mission you wish to remove first and after that you need to click remove mission button.
+The app handles it automaticaly
 ## Loading system config file
 On this tab you need to load the correct file you wish to use. These files are completely editable json files found under ./System
 Once loaded switching is just as easy. The current loaded config file is displayed as green.
