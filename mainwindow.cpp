@@ -43,6 +43,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(notifier,SIGNAL(directoryChanged(QString)),this,SLOT(OnNewFile(QString)));
     connect(notifier,SIGNAL(fileChanged(const QString &)),this,SLOT(OnNewEvent(const QString &)));
     current_station=json::parse("{ \"timestamp\":\"2021-02-14T23:26:06Z\", \"event\":\"Docked\", \"StationName\":\"Sabine Camp\", \"StationType\":\"Outpost\", \"StarSystem\":\"Cuberara\", \"SystemAddress\":2869440554457, \"MarketID\":3225893888, \"StationFaction\":{ \"Name\":\"Albardhas for Equality\", \"FactionState\":\"Election\" }, \"StationGovernment\":\"$government_Democracy;\", \"StationGovernment_Localised\":\"Democracy\", \"StationServices\":[ \"dock\", \"autodock\", \"blackmarket\", \"commodities\", \"contacts\", \"exploration\", \"missions\", \"refuel\", \"repair\", \"tuning\", \"engineer\", \"missionsgenerated\", \"flightcontroller\", \"stationoperations\", \"powerplay\", \"searchrescue\", \"stationMenu\" ], \"StationEconomy\":\"$economy_Extraction;\", \"StationEconomy_Localised\":\"Extraction\", \"StationEconomies\":[ { \"Name\":\"$economy_Extraction;\", \"Name_Localised\":\"Extraction\", \"Proportion\":0.830000 }, { \"Name\":\"$economy_Refinery;\", \"Name_Localised\":\"Refinery\", \"Proportion\":0.170000 } ], \"DistFromStarLS\":5.187345 }");
+    ui->kills_left->setText("0");
+    ui->kills_made->setText("0");
 }
 
 void MainWindow::OnNewFile(const QString &file) {
@@ -121,6 +123,26 @@ void MainWindow::OnNewEvent(const QString &file) {
                     missionCompleted((unsigned)event["MissionID"],true);
                 } else if ((string)event["event"]=="Docked") {
                     current_station=event;
+                    for (auto i=0;i<ui->systems->count();i++) {
+                        if (ui->systems->item(i)->text().toStdString()==(string)current_station["StarSystem"]) {
+                            ui->systems->setCurrentItem(ui->systems->item(i));
+                            on_systems_itemClicked(ui->systems->currentItem());
+                            break;
+                        }
+                    }
+                    for (auto i=0;i<ui->stations->count();i++) {
+                        if (ui->stations->item(i)->text().toStdString()==(string)current_station["StationName"]) {
+                            ui->stations->setCurrentItem(ui->stations->item(i));
+                            on_systems_itemClicked(ui->stations->currentItem());
+                            break;
+                        }
+                    }
+                } else if ((string)event["event"]=="Bounty") {
+                    if (MissionTargetFactions.find((string)event["VictimFaction"])!=MissionTargetFactions.end()) {
+                        total_kills_so_far++;
+                        ui->kills_made->setText(QString::number(total_kills_so_far));
+                        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
+                    }
                 }
             }
         }
@@ -140,6 +162,7 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     rew_diff=k->second.second.first;
                     i->second.second.first-=kill_diff;
                     total_kills-=kill_diff;
+                    total_kills_so_far-=kill_diff;
                     i->second.second.second-=rew_diff;
                     ui->label_8->setText(QString::number(ui->label_8->text().toDouble()-rew_diff));
                     int max=0;
@@ -151,6 +174,8 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     total_mission_count--;
                     max_kills=max;
                     ui->label_9->setText(QString::number(max_kills));
+                    ui->kills_made->setText(QString::number(total_kills_so_far));
+                    ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
                     if (max_kills!=0) {
                         ui->label_10->setText(QString::number((double)total_kills/(double)max_kills, 'f', 10));
                         ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000000/max_kills, 'f', 10));
@@ -352,6 +377,8 @@ void MainWindow::on_listWidget_2_itemClicked(QListWidgetItem *item)
         ui->label_9->setText(QString::number(max_kills));
         ui->label_10->setText(QString::number(total_kills/max_kills, 'f', 10));
         ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000000/max_kills, 'f', 10));
+        ui->kills_made->setText(QString::number(total_kills_so_far));
+        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
     }
 }
 
@@ -693,6 +720,8 @@ void MainWindow::on_pushButton_6_clicked()
     ui->label_9->setText(QString::number(max_kills));
     ui->label_10->setText(QString::number(total_kills/max_kills, 'f', 10));
     ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000000/max_kills, 'f', 10));
+    ui->kills_made->setText(QString::number(total_kills_so_far));
+    ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
 }
 
 

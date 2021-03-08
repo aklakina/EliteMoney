@@ -81,6 +81,7 @@ private:
     QStringList originalContent;
     json events;
     bool checkingifdone,therewasanother;
+    int total_kills_so_far=0;
     /*void findInJson(string ID);
     bool changed=false;*/
 };
