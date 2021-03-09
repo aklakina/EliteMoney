@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    //bool firstrun=!QFile::exists("./Ran");
     QDir directory(QDir::currentPath()+"/System/");
     QStringList configs = directory.entryList();
     ui->listWidget_2->addItems(configs);
@@ -36,6 +37,8 @@ MainWindow::MainWindow(QWidget *parent)
     QStringList baseabsolute;
     for (auto i:basenames) {
         QString b=path1.first()+"/Saved Games/Frontier Developments/Elite Dangerous/"+i;
+        /*if (firstrun)
+            OnNewEvent(b);*/
         baseabsolute.push_back(b);
     }
     originalContent=basenames;
@@ -45,6 +48,13 @@ MainWindow::MainWindow(QWidget *parent)
     current_station=json::parse("{ \"timestamp\":\"2021-02-14T23:26:06Z\", \"event\":\"Docked\", \"StationName\":\"Sabine Camp\", \"StationType\":\"Outpost\", \"StarSystem\":\"Cuberara\", \"SystemAddress\":2869440554457, \"MarketID\":3225893888, \"StationFaction\":{ \"Name\":\"Albardhas for Equality\", \"FactionState\":\"Election\" }, \"StationGovernment\":\"$government_Democracy;\", \"StationGovernment_Localised\":\"Democracy\", \"StationServices\":[ \"dock\", \"autodock\", \"blackmarket\", \"commodities\", \"contacts\", \"exploration\", \"missions\", \"refuel\", \"repair\", \"tuning\", \"engineer\", \"missionsgenerated\", \"flightcontroller\", \"stationoperations\", \"powerplay\", \"searchrescue\", \"stationMenu\" ], \"StationEconomy\":\"$economy_Extraction;\", \"StationEconomy_Localised\":\"Extraction\", \"StationEconomies\":[ { \"Name\":\"$economy_Extraction;\", \"Name_Localised\":\"Extraction\", \"Proportion\":0.830000 }, { \"Name\":\"$economy_Refinery;\", \"Name_Localised\":\"Refinery\", \"Proportion\":0.170000 } ], \"DistFromStarLS\":5.187345 }");
     ui->kills_left->setText("0");
     ui->kills_made->setText("0");
+    /*if (firstrun) {
+        QFile file_1("./Ran");
+        if (file_1.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&file_1);
+            stream<<"true";
+        }
+    }*/
 }
 
 void MainWindow::OnNewFile(const QString &file) {
@@ -277,7 +287,7 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
             break;
         }
     }
-    found=false;
+    /*found=false;
     for (auto i=missions.begin();i!=missions.end();i++) {
         for (auto k=i->second.first.begin();k!=i->second.first.end();k++) {
             if (!k->second.second.first) {
@@ -291,7 +301,7 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
     }
     if (!found) {
         MissionTarget="Nothing_yet";
-    }
+    }*/
 }
 
 void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QString faction) {
@@ -410,16 +420,23 @@ MainWindow::~MainWindow()
 
 void MainWindow::GarbageCollector() {
     config.clear();
+    total_mission_count=0;
     total_kills=0;
     max_kills=0;
     ratio=0;
-    total_mission_count=0;
     ui->treeWidget_3->clear();
     ui->systems->clear();
     ui->stations->clear();
     ui->factions->clear();
     ui->missions->clear();
     ui->treeWidget->clear();
+    ui->label_8->setText("0");
+    ui->label_9->setText("0");
+    ui->label_10->setText("0");
+    ui->label_11->setText("0");
+    current_station.clear();
+    missions.clear();
+    MissionTarget="Nothing_yet";
 }
 
 void MainWindow::on_listWidget_2_itemClicked(QListWidgetItem *item)
@@ -450,7 +467,7 @@ void MainWindow::on_listWidget_2_itemClicked(QListWidgetItem *item)
             ui->label_8->setText(QString::number(ui->label_8->text().toDouble()+k->second.second.second));
         }
         max_kills=max;
-        MissionTarget=(string)config["Total kills so far"].begin().value();
+        MissionTarget=(string)config["Total kills so far"].begin().key();
         total_kills_so_far=QString::fromStdString((string)config["Total kills so far"].begin().value()).toInt();
         ui->label_9->setText(QString::number(max_kills));
         ui->label_10->setText(QString::number(total_kills/max_kills, 'f', 10));
@@ -502,6 +519,21 @@ void MainWindow::displayData(unsigned *ID,bool remove) {
         if (remove) {
             for (auto i=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).begin();i!=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).end();i++) {
                 i.value().erase(QString::number(*ID).toStdString());
+                if (i.value().empty()) {
+                    json* temp=&config[ui->systemName->text().toStdString()][ui->systems->currentItem()->text().toStdString()][ui->stations->currentItem()->text().toStdString()];
+                    temp->erase(i);
+                    if ((*temp).empty()) {
+                        json* temp_2=&config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString());
+                        temp_2->erase(ui->stations->currentItem()->text().toStdString());
+                        if (temp_2->empty()) {
+                            json* temp_3=&config.at(ui->systemName->text().toStdString());
+                            temp_3->erase(ui->systems->currentItem()->text().toStdString());
+                            if (temp_3->empty()) {
+                                config.clear();
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -545,6 +577,9 @@ void MainWindow::refreshdata(int depth,json *a) {
             on_pushButton_3_clicked();
             ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->currentItem()->child(ui->treeWidget_3->currentItem()->childCount()-1));
             ui->treeWidget_3->currentItem()->setText(0,key);
+            if (depth==1) {
+                station_name=key;
+            }
         }
         if (depth!=3) {
             b=i.value();
@@ -571,7 +606,11 @@ void MainWindow::refreshdata(int depth,json *a) {
                 }
                 j++;
             }
-            missions.insert({{QString::fromStdString((string)i.key()),QString::fromStdString((string)current_station["StationName"])},{temp,{kill,rew}}});
+            if (!current_station.empty()) {
+                missions.insert({{QString::fromStdString((string)i.key()),QString::fromStdString((string)current_station["StationName"])},{temp,{kill,rew}}});
+            } else {
+                missions.insert({{QString::fromStdString((string)i.key()),station_name},{temp,{kill,rew}}});
+            }
         }
         ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->currentItem()->parent());
     }

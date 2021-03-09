@@ -70,7 +70,7 @@ private:
     QFileSystemWatcher *notifier;
     void addMission(string dest,int kills, double reward, unsigned ID,QString faction);
     map<string,int> MissionTargetFactions;
-    string MissionTarget;
+    string MissionTarget="Nothing_yet";
     //json current_system;
     json current_station;
     void CheckCurrentStation(QString &faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
@@ -82,5 +82,6 @@ private:
     bool checkingifdone,therewasanother;
     int total_kills_so_far=0;
     void resetTreeColor();
+    QString station_name="";
 };
 #endif // MAINWINDOW_H
