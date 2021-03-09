@@ -19,5 +19,5 @@ There is and example hierarchy in the ./System folder and the program would cras
 You need to add the factions correct name (it handles faction1 at station1 and station2 as one faction).
 ## The buttons at the top
 They are used to select the next or previous system config file.
-# Zip file download link:
-http://users.itk.ppke.hu/~paple/EliteMoney/compiled.zip
+# Please do not forget to support me if you liked what I've created
+Click on the support button on the top to do so.
