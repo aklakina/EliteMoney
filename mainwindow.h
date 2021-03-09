@@ -38,8 +38,6 @@ private slots:
 
     void on_factions_itemClicked(QListWidgetItem *item);
 
-    void on_treeWidget_itemClicked(QTreeWidgetItem *item, int column);
-
     void on_pushButton_6_clicked();
 
     void on_pushButton_2_clicked();
@@ -61,7 +59,7 @@ private:
     json config;
     void configreader(QTreeWidgetItem* item, string &a);
     void refreshdata(int depth=0, json *a=nullptr);
-    map<QString,pair<vector<pair<unsigned,pair<int,pair<double,bool>>>>,pair<int,double>>> missions;
+    map<pair<QString,QString>,pair<vector<pair<unsigned,pair<int,pair<double,bool>>>>,pair<int,double>>> missions;
     void firsttreefiller();
     double total_kills=0;
     double max_kills=0;
@@ -71,7 +69,8 @@ private:
     void deleteing(QTreeWidgetItem*a);
     QFileSystemWatcher *notifier;
     void addMission(string dest,int kills, double reward, unsigned ID,QString faction);
-    set<string> MissionTargetFactions;
+    map<string,int> MissionTargetFactions;
+    string MissionTarget;
     //json current_system;
     json current_station;
     void CheckCurrentStation(QString &faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
@@ -82,7 +81,6 @@ private:
     json events;
     bool checkingifdone,therewasanother;
     int total_kills_so_far=0;
-    /*void findInJson(string ID);
-    bool changed=false;*/
+    void resetTreeColor();
 };
 #endif // MAINWINDOW_H
