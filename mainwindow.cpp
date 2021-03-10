@@ -277,7 +277,9 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     ui->treeWidget->addTopLevelItem(ui->treeWidget_3->topLevelItem(0)->clone());
                     ui->treeWidget->expandAll();
                     displayData(&ID,remove);
+
                     completedData();
+
                     found=true;
                     break;
                 }
@@ -519,7 +521,7 @@ void MainWindow::displayData(unsigned *ID,bool remove) {
         if (remove) {
             for (auto i=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).begin();i!=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).end();i++) {
                 i.value().erase(QString::number(*ID).toStdString());
-                if (i.value().empty()) {
+                /*if (i.value().empty()) {
                     json* temp=&config[ui->systemName->text().toStdString()][ui->systems->currentItem()->text().toStdString()][ui->stations->currentItem()->text().toStdString()];
                     temp->erase(i);
                     if ((*temp).empty()) {
@@ -533,7 +535,7 @@ void MainWindow::displayData(unsigned *ID,bool remove) {
                             }
                         }
                     }
-                }
+                }*/
             }
         }
     }
@@ -577,7 +579,7 @@ void MainWindow::refreshdata(int depth,json *a) {
             on_pushButton_3_clicked();
             ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->currentItem()->child(ui->treeWidget_3->currentItem()->childCount()-1));
             ui->treeWidget_3->currentItem()->setText(0,key);
-            if (depth==1) {
+            if (depth==2) {
                 station_name=key;
             }
         }
