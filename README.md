@@ -1,7 +1,9 @@
 # EliteMoney
 Mission overview program for Elite Dangerous massacre
 # Usage
-You need to open this application first and after this open Elite in order so it can gather the required data. (Only needed to run first if you are docked to a station where you want to pickup missions from)
+You need to open Elite Dangerous first, sign in and connect to a session (open/private/solo). After this open this program. Go back to elite and start doing mission pickups and killing. After a jump and a dock it should synchronize everything automatically and no user interaction needed. When you are done with playing go to the config tab and click save so your progress will be saved and you can reload it later.
+# Reloading 
+To reload progress you need to go to the third tab there select a system. With this method it does not matter when you start elite it will work without elite.
 ## Adding missions
 The app handles it automaticaly
 ## Loading system config file
@@ -17,5 +19,5 @@ There is and example hierarchy in the ./System folder and the program would cras
 You need to add the factions correct name (it handles faction1 at station1 and station2 as one faction).
 ## The buttons at the top
 They are used to select the next or previous system config file.
-# Zip file download link:
-http://users.itk.ppke.hu/~paple/EliteMoney/compiled.zip
+# Please do not forget to support me if you liked what I've created
+Click on the support button on the top to do so.
