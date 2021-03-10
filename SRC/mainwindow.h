@@ -38,10 +38,6 @@ private slots:
 
     void on_factions_itemClicked(QListWidgetItem *item);
 
-    void on_pushButton_6_clicked();
-
-    void on_pushButton_2_clicked();
-
     void on_pushButton_clicked();
 
     void on_pushButton_8_clicked();
@@ -52,6 +48,12 @@ private slots:
 
     void OnNewFile(const QString &file);
 
+    void on_treeWidget_3_itemClicked(QTreeWidgetItem *item, int column);
+
+    void on_save_session_clicked();
+
+    void on_Save_Session_clicked();
+
 private:
     Ui::MainWindow *ui;
     int selecteditem=0;
@@ -59,7 +61,7 @@ private:
     json config;
     void configreader(QTreeWidgetItem* item, string &a);
     void refreshdata(int depth=0, json *a=nullptr);
-    map<pair<QString,QString>,pair<vector<pair<unsigned,pair<int,pair<double,bool>>>>,pair<int,double>>> missions;
+    map<QString,pair<vector<pair<QString,pair<unsigned,pair<int,pair<double,bool>>>>>,pair<int,double>>> missions;
     void firsttreefiller();
     double total_kills=0;
     double max_kills=0;
@@ -83,5 +85,9 @@ private:
     int total_kills_so_far=0;
     void resetTreeColor();
     QString station_name="";
+    void KillsperFaction();
+    void on_pushButton_6_clicked();
+    int kills_needed_for_this=0;
+    int reward_for_this=0;
 };
 #endif // MAINWINDOW_H

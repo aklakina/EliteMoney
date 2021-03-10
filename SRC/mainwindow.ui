@@ -73,21 +73,21 @@
       </property>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Add missions</string>
+        <string>Active missions overview</string>
+       </attribute>
+       <attribute name="toolTip">
+        <string>Here you can see the active missions in their right place in the system hierarchy</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_8">
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
            <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <widget class="QListWidget" name="systems"/>
+            <item row="1" column="0">
+             <widget class="QListWidget" name="factions"/>
             </item>
             <item row="0" column="1">
              <widget class="QListWidget" name="stations"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QListWidget" name="factions"/>
             </item>
             <item row="1" column="1">
              <widget class="QTreeWidget" name="missions">
@@ -98,62 +98,15 @@
               </column>
              </widget>
             </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" name="verticalLayout_4">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_6">
-              <item>
-               <widget class="QLabel" name="label_6">
-                <property name="text">
-                 <string>Required kill:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QSpinBox" name="spinBox">
-                <property name="singleStep">
-                 <number>5</number>
-                </property>
-               </widget>
-              </item>
-             </layout>
+            <item row="0" column="0">
+             <widget class="QListWidget" name="systems"/>
             </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_7">
-              <item>
-               <widget class="QLabel" name="label_7">
-                <property name="text">
-                 <string>Credit reward:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QDoubleSpinBox" name="doubleSpinBox">
-                <property name="suffix">
-                 <string>Mill</string>
-                </property>
-                <property name="maximum">
-                 <double>60.000000000000000</double>
-                </property>
-                <property name="singleStep">
-                 <double>5.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_8">
-              <item>
-               <widget class="QPushButton" name="pushButton_6">
-                <property name="text">
-                 <string>Add mission</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="Save_Session">
+              <property name="text">
+               <string>Save Current Session</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -165,6 +118,9 @@
        <attribute name="title">
         <string>Completed mission overview</string>
        </attribute>
+       <attribute name="toolTip">
+        <string>Here you can see each completed mission in their right place in the system hierarchy.</string>
+       </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_11">
         <item>
          <widget class="QTreeWidget" name="treeWidget">
@@ -175,28 +131,47 @@
           </column>
          </widget>
         </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tab_4">
-       <attribute name="title">
-        <string>Load system config file</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_7">
         <item>
-         <widget class="QListWidget" name="listWidget_2"/>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_2">
+         <widget class="QPushButton" name="save_session">
           <property name="text">
-           <string>New config file</string>
+           <string>Save Current Session</string>
           </property>
          </widget>
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab_3">
+       <attribute name="title">
+        <string>Faction overview</string>
+       </attribute>
+       <attribute name="toolTip">
+        <string>Here you can have a brief overview about the summed mission data for each faction</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_13">
+        <item>
+         <widget class="QListWidget" name="listWidget"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_4">
+       <attribute name="title">
+        <string>Load previous session</string>
+       </attribute>
+       <attribute name="toolTip">
+        <string>Here will be listed all your previous sessions that you have saved. You can reload them from here by clicking on them.</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <widget class="QListWidget" name="listWidget_2"/>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="tab_5">
        <attribute name="title">
-        <string>Edit current config file</string>
+        <string>Edit System Hierarchy</string>
+       </attribute>
+       <attribute name="toolTip">
+        <string>You do not need to use this tab ever unless you want to create a hypothetical system</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>

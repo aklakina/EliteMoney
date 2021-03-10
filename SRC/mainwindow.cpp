@@ -79,6 +79,15 @@ void MainWindow::OnNewFile(const QString &file) {
     notifier->addPath(full);
 }
 
+void MainWindow::KillsperFaction() {
+    ui->listWidget->clear();
+    for (auto i:missions) {
+        QListWidgetItem* temp=new QListWidgetItem();
+        temp->setText(i.first+"    :    "+QString::number(i.second.second.first)+" for "+QString::number(i.second.second.second)+" Million credits");
+        ui->listWidget->addItem(temp);
+    }
+}
+
 void MainWindow::OnNewEvent(const QString &file) {
     /*if (checkingifdone) {
         therewasanother=true;
@@ -213,7 +222,7 @@ void MainWindow::resetTreeColor() {
                 QTreeWidgetItem* temp_3;
                 for (auto i=0;i<temp_2->childCount();i++) {
                     temp_3=temp_2->child(i);
-                    temp_3->setBackground(0,QBrush(QColor(255,255,255)));
+                    temp_3->setBackground(0,QBrush(QColor(255,165,0)));
                 }
             }
         }
@@ -228,9 +237,9 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
         for (auto k=i->second.first.begin();k!=i->second.first.end();k++) {
             if (k->first==ID) {
                 if (!remove) {
-                    k->second.second.second=true;
-                    kill_diff=k->second.first;
-                    rew_diff=k->second.second.first;
+                    k->second.second.second.second=true;
+                    kill_diff=k->second.second.first;
+                    rew_diff=k->second.second.second.first;
                     i->second.second.first-=kill_diff;
                     total_kills-=kill_diff;
                     i->second.second.second-=rew_diff;
@@ -264,6 +273,7 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     ui->treeWidget->addTopLevelItem(ui->treeWidget_3->topLevelItem(0)->clone());
                     ui->treeWidget->expandAll();
                     completedData();
+                    KillsperFaction();
                     on_factions_itemClicked(ui->factions->currentItem());
                     found=true;
                     break;
@@ -277,9 +287,8 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     ui->treeWidget->addTopLevelItem(ui->treeWidget_3->topLevelItem(0)->clone());
                     ui->treeWidget->expandAll();
                     displayData(&ID,remove);
-
                     completedData();
-
+                    KillsperFaction();
                     found=true;
                     break;
                 }
@@ -354,10 +363,17 @@ void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QS
             break;
         }
     }
-    ui->spinBox->setValue(kills);
-    ui->doubleSpinBox->setValue(reward);
+    kills_needed_for_this=kills;
+    reward_for_this=reward;
     on_pushButton_6_clicked();
-    (missions.find({faction,QString::fromStdString((string)current_station["StationName"])})->second.first.end()-1)->first=ID;
+    auto temp=&(missions.find(faction)->second.first);
+    auto temp_2=temp->begin();
+    for (auto k=temp->begin();k!=temp->end();k++) {
+        if (k->first==QString::fromStdString((string)current_station["StationName"])) {
+            temp_2=k;
+        }
+    }
+    temp_2->second.first=ID;
     ui->missions->topLevelItem(ui->missions->topLevelItemCount()-1)->setText(3,QString::number(ID));
     on_pushButton_5_clicked();
 }
@@ -460,6 +476,7 @@ void MainWindow::on_listWidget_2_itemClicked(QListWidgetItem *item)
         ui->treeWidget->expandAll();
         displayData();
         completedData();
+        KillsperFaction();
         int max=0;
         for (auto k=missions.begin();k!=missions.end();k++) {
             total_mission_count+=k->second.first.size();
@@ -486,12 +503,13 @@ void MainWindow::completedData() {
             QTreeWidgetItem* stations=systems->child(j);
             for (auto n=0;n<stations->childCount();n++) {
                 QTreeWidgetItem* factions=stations->child(n);
-                auto a=missions.find({factions->text(0),stations->text(0)});
-                if (a!=missions.end()) {
-                    for (auto l=a->second.first.begin();l!=a->second.first.end();l++) {
-                        if (l->second.second.second) {
+                auto temp=missions.find(factions->text(0));
+                if (temp!=missions.end()) {
+                    for (auto k=temp->second.first.begin();k!=temp->second.first.end();k++) {
+                        if (k->first==stations->text(0) && k->second.second.second.second) {
                             QTreeWidgetItem* mission=new QTreeWidgetItem();
-                            mission->setText(0,QString::number(l->second.first)+";"+QString::number(l->second.second.first));
+                            mission->setText(0,QString::number(k->second.second.first)+" kills for "+QString::number(k->second.second.second.first)+" Million Credits");
+                            mission->setBackground(0,QBrush(QColor(255,165,0)));
                             factions->addChild(mission);
                         }
                     }
@@ -567,7 +585,6 @@ void MainWindow::refreshdata(int depth,json *a) {
     QString key;
     json b;
     for (auto i=a->begin();i!=a->end();i++) {
-
         key=QString::fromStdString((string)i.key());
         if ((string)i.key()=="Total kills so far") {
             continue;
@@ -588,7 +605,7 @@ void MainWindow::refreshdata(int depth,json *a) {
             refreshdata(depth+1,&b);
         } else {
             b=i.value();
-            vector<pair<unsigned,pair<int,pair<double,bool>>>> temp;
+            vector<pair<QString,pair<unsigned,pair<int,pair<double,bool>>>>> temp;
             unsigned j=0;
             int kill=0;
             double rew=0;
@@ -601,18 +618,17 @@ void MainWindow::refreshdata(int depth,json *a) {
                 } else {
                     tempor=true;
                 }
-                temp.push_back({QString::fromStdString((string)k.key()).toUInt(),{miss.section(";",0,0).toInt(),{miss.section(";",1,1).toDouble(),tempor}}});
+                if (!current_station.empty()) {
+                    station_name=QString::fromStdString((string)current_station["StationName"]);
+                }
+                temp.push_back({station_name,{QString::fromStdString((string)k.key()).toUInt(),{miss.section(";",0,0).toInt(),{miss.section(";",1,1).toDouble(),tempor}}}});
                 if (!tempor) {
-                    kill+=temp[j].second.first;
-                    rew+=temp[j].second.second.first;
+                    kill+=temp[j].second.second.first;
+                    rew+=temp[j].second.second.second.first;
                 }
                 j++;
             }
-            if (!current_station.empty()) {
-                missions.insert({{QString::fromStdString((string)i.key()),QString::fromStdString((string)current_station["StationName"])},{temp,{kill,rew}}});
-            } else {
-                missions.insert({{QString::fromStdString((string)i.key()),station_name},{temp,{kill,rew}}});
-            }
+            missions.insert({QString::fromStdString((string)i.key()),{temp,{kill,rew}}});
         }
         ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->currentItem()->parent());
     }
@@ -684,28 +700,35 @@ void MainWindow::configreader(QTreeWidgetItem* item, string &a) {
                 a+=",";
         } else {
             a+="{";
-            auto result=missions.find({item->child(i)->text(0),item->text(0)});
-            if (result==missions.end()) {
+            auto result_1=missions.find(item->child(i)->text(0));
+            item->text(0);
+            if (result_1==missions.end()) {
                 a+="\""+QString::number(i).toStdString()+"\":\""+
                         "0"
                         +";"+
                         "0;0\"";
             } else {
-                for (unsigned i=0;i<result->second.first.size();i++) {
+                vector<pair<QString,pair<unsigned,pair<int,pair<double,bool>>>>> result;
+                for (auto k=result_1->second.first.begin();k!=result_1->second.first.end();k++) {
+                    if (k->first==item->text(0)) {
+                        result.push_back(*k);
+                    }
+                }
+                for (unsigned i=0;i<result.size();i++) {
                     int tempor;
-                    if (result->second.first.at(i).second.second.second==false) {
+                    if (result.at(i).second.second.second.second==false) {
                         tempor=0;
                     } else {
                         tempor=1;
                     }
-                    a+="\""+QString::number(result->second.first.at(i).first).toStdString()+"\":\""+
-                            QString::number(result->second.first.at(i).second.first).toStdString()
+                    a+="\""+QString::number(result.at(i).second.first).toStdString()+"\":\""+
+                            QString::number(result.at(i).second.second.first).toStdString()
                             +";"+
-                            QString::number(result->second.first.at(i).second.second.first).toStdString()
+                            QString::number(result.at(i).second.second.second.first).toStdString()
                             +";"+
                             QString::number(tempor).toStdString()
                             +"\"";
-                    if (i!=result->second.first.size()-1) {
+                    if (i!=result.size()-1) {
                         a+=",";
                     }
                 }
@@ -733,8 +756,14 @@ void MainWindow::deleteing(QTreeWidgetItem*a) {
             deleteing(a->child(i));
         }
     } else {
-        if (missions.find({a->text(0),a->parent()->text(0)})!=missions.end())
-            missions.erase(missions.find({a->text(0),a->parent()->text(0)}));
+        auto temp=missions.find(a->text(0));
+        if (temp!=missions.end()) {
+            for (auto i=temp->second.first.begin();i!=temp->second.first.begin();i++) {
+                if (i->first==a->parent()->text(0)) {
+                    temp->second.first.erase(i);
+                }
+            }
+        }
     }
 }
 
@@ -778,14 +807,14 @@ void MainWindow::on_factions_itemClicked(QListWidgetItem *item)
     if (missions.empty()) {
         return;
     }
-    auto a=missions.find({ui->factions->currentItem()->text(),ui->stations->currentItem()->text()});
+    auto a=missions.find(ui->factions->currentItem()->text());
     if (a!=missions.end()) {
         for (auto i=a->second.first.begin();i!=a->second.first.end();i++) {
-            if (!i->second.second.second) {
+            if (!i->second.second.second.second && i->first==ui->stations->currentItem()->text()) {
                 QTreeWidgetItem *temp=new QTreeWidgetItem();
-                temp->setText(0,QString::number(i->second.first));
-                temp->setText(1,QString::number(i->second.second.first));
-                temp->setText(2,QString::number(i->first));
+                temp->setText(0,QString::number(i->second.second.first));
+                temp->setText(1,QString::number(i->second.second.second.first));
+                temp->setText(2,QString::number(i->second.first));
                 ui->missions->addTopLevelItem(temp);
             }
         }
@@ -794,27 +823,28 @@ void MainWindow::on_factions_itemClicked(QListWidgetItem *item)
 
 void MainWindow::on_pushButton_6_clicked()
 {
-    auto result=missions.find({ui->factions->currentItem()->text(),ui->stations->currentItem()->text()});
+    auto result=missions.find(ui->factions->currentItem()->text());
+    //ui->stations->currentItem()->text()
     QTreeWidgetItem *temp=new QTreeWidgetItem();
-    temp->setText(0,QString::number(ui->spinBox->value()));
-    temp->setText(1,QString::number((double)ui->doubleSpinBox->value()));
+    temp->setText(0,QString::number(kills_needed_for_this));
+    temp->setText(1,QString::number((double)reward_for_this));
     ui->missions->addTopLevelItem(temp);
     if (result==missions.end()) {
-        vector<pair<unsigned,pair<int,pair<double,bool>>>> temp;
+        vector<pair<QString,pair<unsigned,pair<int,pair<double,bool>>>>> temp;
         int kill=0;
         double rew=0;
         for (auto i=0;i<ui->missions->topLevelItemCount();i++) {
-            temp.push_back({i,{ui->missions->topLevelItem(i)->text(0).toInt(),{ui->missions->topLevelItem(i)->text(1).toDouble(),false}}});
+            temp.push_back({ui->stations->currentItem()->text(),{i,{ui->missions->topLevelItem(i)->text(0).toInt(),{ui->missions->topLevelItem(i)->text(1).toDouble(),false}}}});
             kill+=ui->missions->topLevelItem(i)->text(0).toInt();
             rew+=ui->missions->topLevelItem(i)->text(1).toDouble();
         }
         total_kills+=kill;
-        missions.insert({{ui->factions->currentItem()->text(),ui->stations->currentItem()->text()},{temp,{kill,rew}}});
+        missions.insert({ui->factions->currentItem()->text(),{temp,{kill,rew}}});
         ui->label_8->setText(QString::number(ui->label_8->text().toDouble()+rew));
     } else {
-        int kill=ui->spinBox->value();
-        double rew=ui->doubleSpinBox->value();
-        result->second.first.push_back({result->second.first.size(),{ui->missions->topLevelItem(ui->missions->topLevelItemCount()-1)->text(0).toInt(),{ui->missions->topLevelItem(ui->missions->topLevelItemCount()-1)->text(1).toDouble(),false}}});
+        int kill=kills_needed_for_this;
+        double rew=reward_for_this;
+        result->second.first.push_back({ui->stations->currentItem()->text(),{result->second.first.size(),{ui->missions->topLevelItem(ui->missions->topLevelItemCount()-1)->text(0).toInt(),{ui->missions->topLevelItem(ui->missions->topLevelItemCount()-1)->text(1).toDouble(),false}}}});
         result->second.second.first+=kill;
         total_kills+=kill;
         result->second.second.second+=rew;
@@ -877,19 +907,20 @@ void MainWindow::on_pushButton_6_clicked()
     }
 }*/
 
-void MainWindow::on_pushButton_2_clicked()
-{
-    GarbageCollector();
-    ui->listWidget_2->addItem("new.json");
-    ui->tabWidget->setCurrentIndex(3);
-}
-
 void MainWindow::on_pushButton_clicked()
 {
     QFile::remove("./Systems/"+ui->treeWidget_3->topLevelItem(0)->text(0));
     GarbageCollector();
+    if (ui->listWidget_2->count()>0) {
     ui->listWidget_2->setCurrentRow(0);
     on_listWidget_2_itemClicked(ui->listWidget_2->currentItem());
+    } else {
+        QDir directory(QDir::currentPath()+"/System/");
+        QStringList configs = directory.entryList();
+        ui->listWidget_2->addItems(configs);
+        delete ui->listWidget_2->item(0);
+        delete ui->listWidget_2->item(0);
+    }
 }
 
 void MainWindow::on_pushButton_8_clicked()
@@ -916,4 +947,39 @@ void MainWindow::on_pushButton_9_clicked()
     }
     ui->listWidget_2->setCurrentRow(row);
     on_listWidget_2_itemClicked(ui->listWidget_2->currentItem());
+}
+
+void MainWindow::on_treeWidget_3_itemClicked(QTreeWidgetItem *item, int column)
+{
+    QTreeWidgetItem* temp;
+    for (auto i=0;i<ui->treeWidget_3->topLevelItemCount();i++) {
+        temp=ui->treeWidget_3->topLevelItem(i);
+        temp->setBackground(0,QBrush(QColor(255,255,255)));
+        QTreeWidgetItem* temp_1;
+        for (auto i=0;i<temp->childCount();i++) {
+            temp_1=temp->child(i);
+            temp_1->setBackground(0,QBrush(QColor(255,255,255)));
+            QTreeWidgetItem* temp_2;
+            for (auto i=0;i<temp_1->childCount();i++) {
+                temp_2=temp_1->child(i);
+                temp_2->setBackground(0,QBrush(QColor(255,255,255)));
+                QTreeWidgetItem* temp_3;
+                for (auto i=0;i<temp_2->childCount();i++) {
+                    temp_3=temp_2->child(i);
+                    temp_3->setBackground(0,QBrush(QColor(255,255,255)));
+                }
+            }
+        }
+    }
+    item->setBackground(column,QBrush(QColor(0,0,155)));
+}
+
+void MainWindow::on_save_session_clicked()
+{
+    on_pushButton_5_clicked();
+}
+
+void MainWindow::on_Save_Session_clicked()
+{
+    on_pushButton_5_clicked();
 }
