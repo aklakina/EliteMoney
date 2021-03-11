@@ -32,11 +32,11 @@ private slots:
 
     void on_pushButton_4_clicked();
 
-    void on_systems_itemClicked(QListWidgetItem *item);
+    /*void on_systems_itemClicked(QListWidgetItem *item);
 
     void on_stations_itemClicked(QListWidgetItem *item);
 
-    void on_factions_itemClicked(QListWidgetItem *item);
+    void on_factions_itemClicked(QListWidgetItem *item);*/
 
     void on_pushButton_clicked();
 
@@ -61,7 +61,7 @@ private:
     json config;
     void configreader(QTreeWidgetItem* item, string &a);
     void refreshdata(int depth=0, json *a=nullptr);
-    map<QString,pair<vector<pair<QString,pair<unsigned,pair<int,pair<double,bool>>>>>,pair<int,double>>> missions;
+    map<QString,pair<vector<pair<pair<QString,QString>,pair<pair<unsigned,QString>,pair<pair<int,int>,pair<double,bool>>>>>,pair<int,double>>> missions;
     void firsttreefiller();
     double total_kills=0;
     double max_kills=0;
@@ -77,10 +77,10 @@ private:
     json current_station;
     void CheckCurrentStation(QString &faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
     void missionCompleted(unsigned ID,bool remove=false);
-    void displayData(unsigned *ID=nullptr,bool remove=false);
+    void RemoveMission(unsigned *ID=nullptr,bool remove=false);
     void completedData();
     QStringList originalContent;
-    json events;
+    vector<pair<string,string>> events;
     bool checkingifdone,therewasanother;
     int total_kills_so_far=0;
     void resetTreeColor();
@@ -89,5 +89,11 @@ private:
     void on_pushButton_6_clicked();
     int kills_needed_for_this=0;
     int reward_for_this=0;
+    QString faction_global="";
+    QString station="";
+    vector<pair<vector<QString>,QString>> systemStation;
+    QString system_namee;
+    vector<pair<vector<QString>,QString>> factionStation;
+    QString temp_mission_target;
 };
 #endif // MAINWINDOW_H
