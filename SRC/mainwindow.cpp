@@ -5,6 +5,8 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QStandardPaths>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <windows.h>
 
 using namespace std;
@@ -14,12 +16,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //bool firstrun=!QFile::exists("./Ran");
     QDir directory(QDir::currentPath()+"/System/");
     QStringList configs = directory.entryList();
-    ui->listWidget_2->addItems(configs);
-    delete ui->listWidget_2->item(0);
-    delete ui->listWidget_2->item(0);
     ui->label_8->setText("0");
     ui->label_9->setText("0");
     ui->label_10->setText("0");
@@ -32,8 +30,6 @@ MainWindow::MainWindow(QWidget *parent)
     QStringList baseabsolute;
     for (auto i:basenames) {
         QString b=path1.first()+"/Saved Games/Frontier Developments/Elite Dangerous/"+i;
-        /*if (firstrun)
-            OnNewEvent(b);*/
         baseabsolute.push_back(b);
     }
     originalContent=basenames;
@@ -43,13 +39,6 @@ MainWindow::MainWindow(QWidget *parent)
     current_station=json::parse("{ \"timestamp\":\"2021-02-14T23:26:06Z\", \"event\":\"Docked\", \"StationName\":\"Sabine Camp\", \"StationType\":\"Outpost\", \"StarSystem\":\"Cuberara\", \"SystemAddress\":2869440554457, \"MarketID\":3225893888, \"StationFaction\":{ \"Name\":\"Albardhas for Equality\", \"FactionState\":\"Election\" }, \"StationGovernment\":\"$government_Democracy;\", \"StationGovernment_Localised\":\"Democracy\", \"StationServices\":[ \"dock\", \"autodock\", \"blackmarket\", \"commodities\", \"contacts\", \"exploration\", \"missions\", \"refuel\", \"repair\", \"tuning\", \"engineer\", \"missionsgenerated\", \"flightcontroller\", \"stationoperations\", \"powerplay\", \"searchrescue\", \"stationMenu\" ], \"StationEconomy\":\"$economy_Extraction;\", \"StationEconomy_Localised\":\"Extraction\", \"StationEconomies\":[ { \"Name\":\"$economy_Extraction;\", \"Name_Localised\":\"Extraction\", \"Proportion\":0.830000 }, { \"Name\":\"$economy_Refinery;\", \"Name_Localised\":\"Refinery\", \"Proportion\":0.170000 } ], \"DistFromStarLS\":5.187345 }");
     ui->kills_left->setText("0");
     ui->kills_made->setText("0");
-    /*if (firstrun) {
-        QFile file_1("./Ran");
-        if (file_1.open(QIODevice::WriteOnly)) {
-            QTextStream stream(&file_1);
-            stream<<"true";
-        }
-    }*/
 }
 
 void MainWindow::OnNewFile(const QString &file) {
@@ -82,7 +71,6 @@ void MainWindow::KillsperFaction() {
     vector<int> frags;
     for (auto i:missions) {
         if (ui->tableWidget->columnCount()<(int)i.second.first.size()+2) {
-            //int last_col_size=ui->tableWidget->columnCount();
             ui->tableWidget->setColumnCount(i.second.first.size()+2);
         }
         for (unsigned k=0;k<missions.size();k++) {
@@ -92,14 +80,18 @@ void MainWindow::KillsperFaction() {
         }
     }
     for (auto i:missions) {
-        //QString b="";
         QTableWidgetItem* temp=new QTableWidgetItem(i.first);
-        //b+=i.first+":";
         int frags_needed=0;
         curr_col=0;
         for (auto j:i.second.first) {
             if (!j.second.second.second.second) {
-                ui->tableWidget->item(curr_row,curr_col+1)->setText(QString::number(j.second.second.first.first-j.second.second.first.second));
+                int kills_needed=0;
+                if (curr_col>0) {
+                    kills_needed=j.second.second.first.first;
+                } else {
+                    kills_needed=j.second.second.first.first-j.second.second.first.second;
+                }
+                ui->tableWidget->item(curr_row,curr_col+1)->setText(QString::number(kills_needed));
                 frags_needed+=j.second.second.first.first-j.second.second.first.second;
                 curr_col++;
             }
@@ -124,21 +116,6 @@ void MainWindow::KillsperFaction() {
 }
 
 void MainWindow::OnNewEvent(const QString &file) {
-    /*if (checkingifdone) {
-        therewasanother=true;
-        return;
-    } else {
-        checkingifdone=true;
-    }
-    for (int i=0;i<100;i++) {
-        Sleep(10);
-        if (therewasanother) {
-            qDebug()<<"restarted counter";
-            i=0;
-            therewasanother=false;
-        }
-    }
-    checkingifdone=false;*/
     QFile changed(file);
     qDebug()<<"event started file opened";
     if (changed.open(QIODevice::ReadOnly)) {
@@ -156,16 +133,13 @@ void MainWindow::OnNewEvent(const QString &file) {
                 return;
             }
             bool found=false;
-            for (auto k=events.begin();k!=events.end();k++) {
-                if (k->first==(string)temp["timestamp"] && k->second==(string)temp["event"]) {
-                    qDebug()<<"skipping since event already loaded";
-                    found=true;
-                    break;
-                }
+            if (events.find(temp)!=events.end()) {
+                qDebug()<<"skipping since event already loaded";
+                found=true;
             }
             if (!found) {
                 event=temp;
-                events.push_back({(string)temp["timestamp"],(string)temp["event"]});
+                events.push_back(temp);
                 try {
                 if ((string)event["event"]=="MissionAccepted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
                     MissionTargetFactions.insert({(string)event["TargetFaction"],0});
@@ -180,21 +154,6 @@ void MainWindow::OnNewEvent(const QString &file) {
                     missionCompleted((unsigned)event["MissionID"],true);
                 } else if ((string)event["event"]=="Docked") {
                     current_station=event;
-                    /*for (auto i=0;i<ui->systems->count();i++) {
-                        if (ui->systems->item(i)->text().toStdString()==(string)current_station["StarSystem"]) {
-                            ui->systems->setCurrentItem(ui->systems->item(i));
-                            on_systems_itemClicked(ui->systems->currentItem());
-                            break;
-                        }
-                    }
-
-                    for (auto i=0;i<ui->stations->count();i++) {
-                        if (ui->stations->item(i)->text().toStdString()==(string)current_station["StationName"]) {
-                            ui->stations->setCurrentItem(ui->stations->item(i));
-                            on_stations_itemClicked(ui->stations->currentItem());
-                            break;
-                        }
-                    }*/
                     for (auto i:factionStation) {
                         if ((string)current_station["StationName"]==i.second.toStdString()) {
                             for (auto z:i.first) {
@@ -238,11 +197,12 @@ void MainWindow::OnNewEvent(const QString &file) {
                     int max=0;
                     for (auto i=missions.begin();i!=missions.end();i++) {
                         for (auto k=i->second.first.begin();k!=i->second.first.end();k++) {
-                            if ((string)event["VictimFaction"]==k->second.first.second.toStdString()) {
+                            if ((string)event["VictimFaction"]==k->second.first.second.toStdString() && !k->second.second.second.second) {
                                 k->second.second.first.second+=1;
                                 if (max<k->second.second.first.second) {
                                     max=k->second.second.first.second;
                                 }
+                                break;
                             }
                         }
                     }
@@ -258,6 +218,7 @@ void MainWindow::OnNewEvent(const QString &file) {
                     qDebug()<<lastEvent;
                     qDebug()<<e.what();
                 }
+                on_pushButton_5_clicked("./System/AutoBackup_"+ui->systemName->text()+".json");
             }
         }
     }
@@ -313,7 +274,10 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                             max=kills;
                     }
                     total_mission_count--;
-                    total_kills_so_far=max_kills-max;
+                    total_kills_so_far-=max_kills-max;
+                    if (total_kills_so_far<0) {
+                        total_kills_so_far=0;
+                    }
                     max_kills=max;
                     ui->label_9->setText(QString::number(max_kills));
                     ui->kills_made->setText(QString::number(total_kills_so_far));
@@ -326,23 +290,14 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                         ui->label_11->setText("0");
                         ui->label_8->setText("0");
                     }
-                    /*ui->systems->clear();
-                    ui->stations->clear();
-                    ui->factions->clear();
-                    ui->missions->clear();*/
                     ui->treeWidget->clear();
                     RemoveMission(&ID);
                     completedData();
                     KillsperFaction();
-                    //on_factions_itemClicked(ui->factions->currentItem());
                     found=true;
                     break;
                 } else {
                     i->second.first.erase(k);
-                   /* ui->systems->clear();
-                    ui->stations->clear();
-                    ui->factions->clear();
-                    ui->missions->clear();*/
                     ui->treeWidget->clear();
                     RemoveMission(&ID,remove);
                     completedData();
@@ -356,67 +311,19 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
             break;
         }
     }
-    /*found=false;
-    for (auto i=missions.begin();i!=missions.end();i++) {
-        for (auto k=i->second.first.begin();k!=i->second.first.end();k++) {
-            if (!k->second.second.first) {
-                found=true;
-                break;
-            }
-        }
-        if (found) {
-            break;
-        }
-    }
-    if (!found) {
-        MissionTarget="Nothing_yet";
-    }*/
 }
 
 void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QString faction) {
     if (ui->systemName->text()=="System") {
-        /*bool found=false;
-        for (int i=0;i<ui->listWidget_2->count();i++) {
-            if (ui->listWidget_2->item(i)->text()==QString::fromStdString(dest)) {
-                on_listWidget_2_itemClicked(ui->listWidget_2->item(i));
-                ui->listWidget_2->setCurrentRow(i);
-                found=true;
-                break;
-            }
-        }
-        if (!found) {*/
-            on_pushButton_3_clicked();
-            ui->treeWidget_3->topLevelItem(0)->setText(0,QString::fromStdString(dest));
-            ui->systemName->setText(QString::fromStdString(dest));
-        //}
+        on_pushButton_3_clicked();
+        ui->treeWidget_3->topLevelItem(0)->setText(0,QString::fromStdString(dest));
+        ui->systemName->setText(QString::fromStdString(dest));
     }
     ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->topLevelItem(0));
     CheckCurrentStation(faction);
     ui->treeWidget->clear();
-    //(string)current_station["StarSystem"]; to get star system where you are
     station=QString::fromStdString((string)current_station["StationName"]);
     faction_global=faction;
-    /*for (auto i=0;i<ui->systems->count();i++) {
-        if (ui->systems->item(i)->text().toStdString()==) {
-            ui->systems->setCurrentRow(i);
-            on_systems_itemClicked(ui->systems->item(i));
-            break;
-        }
-    }
-    for (auto i=0;i<ui->stations->count();i++) {
-        if (ui->stations->item(i)->text().toStdString()==) {
-            ui->stations->setCurrentRow(i);
-            on_stations_itemClicked(ui->stations->item(i));
-            break;
-        }
-    }
-    for (auto i=0;i<ui->factions->count();i++) {
-        if (ui->factions->item(i)->text()==faction) {
-            ui->factions->setCurrentRow(i);
-            on_factions_itemClicked(ui->factions->item(i));
-            break;
-        }
-    }*/
     kills_needed_for_this=kills;
     reward_for_this=reward;
     on_pushButton_6_clicked();
@@ -428,8 +335,6 @@ void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QS
         }
     }
     temp_2->second.first.first=ID;
-    //ui->missions->topLevelItem(ui->missions->topLevelItemCount()-1)->setText(3,QString::number(ID));
-    on_pushButton_5_clicked();
     KillsperFaction();
 }
 
@@ -471,7 +376,6 @@ void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool
             }
         }
         config[ui->systemName->text().toStdString()][(string)current_station["StarSystem"]][(string)current_station["StationName"]][faction.toStdString()]["0"]="0;0;0";
-        on_pushButton_5_clicked();
     } else if (!do_not_search && depth==1) {
         bool found=false;
         for (auto i=0;i<item->childCount();i++) {
@@ -520,22 +424,14 @@ void MainWindow::GarbageCollector() {
     MissionTarget="Nothing_yet";
 }
 
-void MainWindow::on_listWidget_2_itemClicked(QListWidgetItem *item)
+void MainWindow::on_listWidget_2_itemClicked(QString file_1)
 {
-    if (item->text()==".." || item->text()==".") {
-        return;
-    }
     GarbageCollector();
-    for (int i=0;i<ui->listWidget_2->count();i++) {
-        ui->listWidget_2->item(i)->setBackground(QBrush(QColor(255,255,255)));
-    }
-    item->setBackground(QBrush(QColor(0,255,0)));
-    QFile f("./System/"+item->text());
+    QFile f(file_1);
     if (f.open(QIODevice::ReadOnly)) {
         QTextStream stream(&f);
         config= json::parse(stream.readAll().toStdString());
         refreshdata();
-        //displayData();
         completedData();
         KillsperFaction();
         int max=0;
@@ -557,10 +453,6 @@ void MainWindow::on_listWidget_2_itemClicked(QListWidgetItem *item)
     }
 }
 
-/*void MainWindow::Refresh_TreeWidget() {
-
-}*/
-
 void MainWindow::completedData() {
     for (auto i:systemStation) {
         for (auto z:i.first) {
@@ -570,7 +462,7 @@ void MainWindow::completedData() {
                 for (auto j:k.second.first) {
                     if (j.first.second==i.second && j.first.first==z && j.second.second.second.second) {
                         QTreeWidgetItem * temp_1=new QTreeWidgetItem();
-                        temp_1->setText(0,k.first+"::     "+QString::number(j.second.second.second.first)+"$ M");
+                        temp_1->setText(0,k.first+"::     "+QString::number(j.second.second.second.first)+"$ K");
                         temp->addChild(temp_1);
                     }
                 }
@@ -596,62 +488,6 @@ void MainWindow::RemoveMission(unsigned *ID,bool remove) {
         }
     }
 }
-    /*ui->systemName->setText(QString::fromStdString((string)config.begin().key()));
-    for (auto i=config.at(ui->systemName->text().toStdString()).begin();i!=config.at(ui->systemName->text().toStdString()).end();i++) {
-        auto sys=i.value();
-        for (auto i=sys.begin();i!=sys.end();i++) {
-
-        }
-    }
-    auto sys=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString());
-
-    ui->stations->setCurrentRow(0);
-    ui->stations->currentItem()->setBackground(QBrush(QColor(0,100,255)));
-    auto stat=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString());
-    for (auto i=stat.begin();i!=stat.end();i++) {
-        ui->factions->addItem(QString::fromStdString((string)i.key()));
-        if (remove) {
-            for (auto i=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).begin();i!=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).end();i++) {
-                i.value().erase(QString::number(*ID).toStdString());
-                if (i.value().empty()) {
-                    json* temp=&config[ui->systemName->text().toStdString()][ui->systems->currentItem()->text().toStdString()][ui->stations->currentItem()->text().toStdString()];
-                    temp->erase(i);
-                    if ((*temp).empty()) {
-                        json* temp_2=&config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString());
-                        temp_2->erase(ui->stations->currentItem()->text().toStdString());
-                        if (temp_2->empty()) {
-                            json* temp_3=&config.at(ui->systemName->text().toStdString());
-                            temp_3->erase(ui->systems->currentItem()->text().toStdString());
-                            if (temp_3->empty()) {
-                                config.clear();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    ui->factions->setCurrentRow(0);
-    ui->factions->currentItem()->setBackground(QBrush(QColor(0,100,255)));
-    if (remove && ID!=nullptr) {
-        config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).at(ui->factions->currentItem()->text().toStdString()).erase(QString::number(*ID).toStdString());
-    }
-    auto fact=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(ui->stations->currentItem()->text().toStdString()).at(ui->factions->currentItem()->text().toStdString());
-
-    for (auto i=fact.begin();i!=fact.end();i++) {
-        if (QString::fromStdString((string)i.value()).section(";",2,2)=="1") {
-        } else if (ID!= nullptr) {
-            if (QString::fromStdString((string)i.key())==QString::number(*ID)) {
-                i.value()=(QString::fromStdString((string)i.value()).section(";",0,1)+";1").toStdString();
-            }
-        } else {
-            QTreeWidgetItem *temp=new QTreeWidgetItem();
-            temp->setText(0,QString::fromStdString((string)i.value()).section(";",0,0));
-            temp->setText(1,QString::fromStdString((string)i.value()).section(";",1,1));
-            ui->missions->addTopLevelItem(temp);
-        }
-    }
-}*/
 
 void MainWindow::refreshdata(int depth,json *a) {
     if (a==nullptr)
@@ -743,7 +579,6 @@ void MainWindow::refreshdata(int depth,json *a) {
 
 void MainWindow::on_pushButton_3_clicked()
 {
-    //qDebug()<<"megnyomtad:"+ui->treeWidget_3->currentItem()->text(0);
     if (ui->treeWidget_3->currentItem()==nullptr) {
         QTreeWidgetItem *temp=new QTreeWidgetItem();
         temp->setText(0,"system1");
@@ -759,9 +594,9 @@ void MainWindow::on_pushButton_3_clicked()
     }
 }
 
-void MainWindow::on_pushButton_5_clicked()
+void MainWindow::on_pushButton_5_clicked(QString file_1)
 {
-    QFile file("./System/"+first->text(0)+".json");
+    QFile file(file_1);
     if (file.open(QIODevice::WriteOnly)) {
         QTextStream stream(&file);
         QTreeWidgetItem *item=ui->treeWidget_3->topLevelItem(0);
@@ -773,22 +608,9 @@ void MainWindow::on_pushButton_5_clicked()
         b.remove(b.length(),0);
         b+=",\"Total kills so far\":{\""+QString::fromStdString(MissionTarget)+"\":\""+QString::number(total_kills_so_far)+"\"}}";
         b.remove("\\");
-        //qDebug()<<b;
         stream<<b;
-        QDir directory(QDir::currentPath()+"/System/");
-        QStringList configs = directory.entryList();
-        ui->listWidget_2->clear();
-        ui->listWidget_2->addItems(configs);
-        delete ui->listWidget_2->item(0);
-        delete ui->listWidget_2->item(0);
-        for (auto i=0;i!=configs.size();i++) {
-            if (configs[i].toStdString()==item->text(0).toStdString()) {
-                ui->listWidget_2->setCurrentRow(i);
-                ui->listWidget_2->setCurrentItem(ui->listWidget_2->item(i));
-                on_listWidget_2_itemClicked(ui->listWidget_2->item(i));
-                break;
-            }
-        }
+    } else {
+        QMessageBox::warning(this,tr("Error while trying to save session"),tr("Could not open given file"));
     }
 }
 
@@ -876,69 +698,10 @@ void MainWindow::deleteing(QTreeWidgetItem*a) {
         }
     }
 }
-/*
-void MainWindow::on_systems_itemClicked(QListWidgetItem *item)
-{
-    for (auto i=0;i<ui->systems->count();i++) {
-        ui->systems->item(i)->setBackground(QBrush(QColor(255,255,255)));
-    }
-    item->setBackground(QBrush(QColor(0,100,255)));
-    ui->stations->clear();
-    ui->factions->clear();
-    ui->missions->clear();
-    json a=config.at(ui->systemName->text().toStdString()).at(item->text().toStdString());
-    for (auto i=a.begin();i!=a.end();i++) {
-        ui->stations->addItem(QString::fromStdString((string)i.key()));
-    }
-}
-
-void MainWindow::on_stations_itemClicked(QListWidgetItem *item)
-{
-    for (auto i=0;i<ui->stations->count();i++) {
-        ui->stations->item(i)->setBackground(QBrush(QColor(255,255,255)));
-    }
-    item->setBackground(QBrush(QColor(0,100,255)));
-    ui->factions->clear();
-    ui->missions->clear();
-    json a=config.at(ui->systemName->text().toStdString()).at(ui->systems->currentItem()->text().toStdString()).at(item->text().toStdString());
-    for (auto i=a.begin();i!=a.end();i++) {
-        ui->factions->addItem(QString::fromStdString((string)i.key()));
-    }
-}
-
-void MainWindow::on_factions_itemClicked(QListWidgetItem *item)
-{
-    for (auto i=0;i<ui->factions->count();i++) {
-        ui->factions->item(i)->setBackground(QBrush(QColor(255,255,255)));
-    }
-    item->setBackground(QBrush(QColor(0,100,255)));
-    ui->factions->setCurrentItem(item);
-    ui->missions->clear();
-    if (missions.empty()) {
-        return;
-    }
-    auto a=missions.find(ui->factions->currentItem()->text());
-    if (a!=missions.end()) {
-        for (auto i=a->second.first.begin();i!=a->second.first.end();i++) {
-            if (!i->second.second.second.second && i->first==ui->stations->currentItem()->text()) {
-                QTreeWidgetItem *temp=new QTreeWidgetItem();
-                temp->setText(0,QString::number(i->second.second.first));
-                temp->setText(1,QString::number(i->second.second.second.first));
-                temp->setText(2,QString::number(i->second.first));
-                ui->missions->addTopLevelItem(temp);
-            }
-        }
-    }
-}*/
 
 void MainWindow::on_pushButton_6_clicked()
 {
     auto result=missions.find(faction_global);
-    //ui->stations->currentItem()->text()
-    /*QTreeWidgetItem *temp=new QTreeWidgetItem();
-    temp->setText(0,QString::number(kills_needed_for_this));
-    temp->setText(1,QString::number((double)reward_for_this));
-    ui->missions->addTopLevelItem(temp);*/
     QString system_name;
     for (auto z:systemStation) {
         bool found=false;
@@ -987,90 +750,6 @@ void MainWindow::on_pushButton_6_clicked()
     ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
 }
 
-
-
-/*void MainWindow::on_pushButton_7_clicked()
-{
-    unsigned j=ui->missions->currentIndex().row();
-    int kill_diff=ui->missions->currentItem()->text(0).toInt();
-    double rew_diff=ui->missions->currentItem()->text(1).toDouble();
-    auto result=missions.find(ui->factions->currentItem()->text());
-    for (auto i=result->second.first.begin();i!=result->second.first.end();i++) {
-        if (i->first==j) {
-            result->second.first.erase(i);
-            break;
-        }
-    }
-    result->second.second.first-=kill_diff;
-    total_kills-=kill_diff;
-    result->second.second.second-=rew_diff;
-    ui->label_8->setText(QString::number(ui->label_8->text().toDouble()-rew_diff));
-    delete ui->missions->topLevelItem(j);
-    unsigned k=0;
-    for (auto i=result->second.first.begin();i!=result->second.first.end();i++) {
-        i->first=k;
-        k++;
-    }
-    int max=0;
-    for (auto k=missions.begin();k!=missions.end();k++) {
-        int kills=k->second.second.first;
-        if (max<kills)
-            max=kills;
-    }
-    total_mission_count--;
-    max_kills=max;
-    ui->label_9->setText(QString::number(max_kills));
-    if (max_kills!=0) {
-        ui->label_10->setText(QString::number((double)total_kills/(double)max_kills, 'f', 10));
-        ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000000/max_kills, 'f', 10));
-    } else {
-        ui->label_10->setText("0");
-        ui->label_11->setText("0");
-    }
-}*/
-
-void MainWindow::on_pushButton_clicked()
-{
-    QFile::remove("./Systems/"+ui->treeWidget_3->topLevelItem(0)->text(0));
-    GarbageCollector();
-    if (ui->listWidget_2->count()>0) {
-    ui->listWidget_2->setCurrentRow(0);
-    on_listWidget_2_itemClicked(ui->listWidget_2->currentItem());
-    } else {
-        QDir directory(QDir::currentPath()+"/System/");
-        QStringList configs = directory.entryList();
-        ui->listWidget_2->addItems(configs);
-        delete ui->listWidget_2->item(0);
-        delete ui->listWidget_2->item(0);
-    }
-}
-
-void MainWindow::on_pushButton_8_clicked()
-{
-    GarbageCollector();
-    int row=0;
-    if (ui->listWidget_2->currentRow()==0) {
-        row=ui->listWidget_2->count()-1;
-    } else {
-        row=ui->listWidget_2->currentRow()-1;
-    }
-    ui->listWidget_2->setCurrentRow(row);
-    on_listWidget_2_itemClicked(ui->listWidget_2->currentItem());
-}
-
-void MainWindow::on_pushButton_9_clicked()
-{
-    GarbageCollector();
-    int row=0;
-    if (ui->listWidget_2->currentRow()==ui->listWidget_2->count()-1) {
-        row=0;
-    } else {
-        row=ui->listWidget_2->currentRow()+1;
-    }
-    ui->listWidget_2->setCurrentRow(row);
-    on_listWidget_2_itemClicked(ui->listWidget_2->currentItem());
-}
-
 void MainWindow::on_treeWidget_3_itemClicked(QTreeWidgetItem *item, int column)
 {
     QTreeWidgetItem* temp;
@@ -1096,12 +775,18 @@ void MainWindow::on_treeWidget_3_itemClicked(QTreeWidgetItem *item, int column)
     item->setBackground(column,QBrush(QColor(0,0,155)));
 }
 
-void MainWindow::on_save_session_clicked()
+void MainWindow::on_actionSave_Session_triggered()
 {
-    on_pushButton_5_clicked();
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save current session"), "./System",
+                                                    tr("Save Files (*.json)"), 0,
+                                                    QFileDialog::DontConfirmOverwrite);
+    on_pushButton_5_clicked(fileName);
 }
 
-void MainWindow::on_Save_Session_clicked()
+void MainWindow::on_actionLoad_session_triggered()
 {
-    on_pushButton_5_clicked();
+    QString fileName = QFileDialog::getOpenFileName(this,
+        tr("Select file to Load"), "./System", tr("Save Files (*.json)"));
+    on_listWidget_2_itemClicked(fileName);
 }

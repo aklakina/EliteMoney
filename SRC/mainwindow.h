@@ -24,25 +24,10 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_listWidget_2_itemClicked(QListWidgetItem *item);
 
     void on_pushButton_3_clicked();
 
-    void on_pushButton_5_clicked();
-
     void on_pushButton_4_clicked();
-
-    /*void on_systems_itemClicked(QListWidgetItem *item);
-
-    void on_stations_itemClicked(QListWidgetItem *item);
-
-    void on_factions_itemClicked(QListWidgetItem *item);*/
-
-    void on_pushButton_clicked();
-
-    void on_pushButton_8_clicked();
-
-    void on_pushButton_9_clicked();
 
     void OnNewEvent(const QString &file);
 
@@ -50,9 +35,9 @@ private slots:
 
     void on_treeWidget_3_itemClicked(QTreeWidgetItem *item, int column);
 
-    void on_save_session_clicked();
+    void on_actionSave_Session_triggered();
 
-    void on_Save_Session_clicked();
+    void on_actionLoad_session_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -73,14 +58,13 @@ private:
     void addMission(string dest,int kills, double reward, unsigned ID,QString faction);
     map<string,int> MissionTargetFactions;
     string MissionTarget="Nothing_yet";
-    //json current_system;
     json current_station;
     void CheckCurrentStation(QString &faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
     void missionCompleted(unsigned ID,bool remove=false);
     void RemoveMission(unsigned *ID=nullptr,bool remove=false);
     void completedData();
     QStringList originalContent;
-    vector<pair<string,string>> events;
+    json events;
     bool checkingifdone,therewasanother;
     int total_kills_so_far=0;
     void resetTreeColor();
@@ -95,5 +79,7 @@ private:
     QString system_namee;
     vector<pair<vector<QString>,QString>> factionStation;
     QString temp_mission_target;
+    void on_pushButton_5_clicked(QString file_1);
+    void on_listWidget_2_itemClicked(QString file_1);
 };
 #endif // MAINWINDOW_H
