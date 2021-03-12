@@ -81,10 +81,11 @@ private:
     QString station="";
     vector<pair<vector<QString>,QString>> systemStation;
     QString system_namee;
-    vector<pair<vector<QString>,QString>> factionStation;
+    vector<pair<vector<pair<QString,int>>,QString>> factionStation;
     QString temp_mission_target;
     void on_pushButton_5_clicked(QString file_1);
     void on_listWidget_2_itemClicked(QString file_1);
     bool should_i_wait=false;
+    void RefreshTree();
 };
 #endif // MAINWINDOW_H

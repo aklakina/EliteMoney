@@ -168,7 +168,7 @@ void MainWindow::OnNewEvent(const QString &file) {
                         if ((string)current_station["StationName"]==i.second.toStdString()) {
                             for (auto z:i.first) {
                                 for (auto j=0;j<ui->tableWidget->rowCount();j++) {
-                                    if (ui->tableWidget->item(j,0)->text()==z) {
+                                    if (ui->tableWidget->item(j,0)->text()==z.first) {
                                         for (auto z=0;z<ui->tableWidget->columnCount();z++) {
                                             ui->tableWidget->item(j,z)->setBackground(QBrush(QColor(10,90,170)));
                                         }
@@ -316,6 +316,18 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     RemoveMission(&ID);
                     completedData();
                     KillsperFaction();
+                    for (auto u=factionStation.begin();u!=factionStation.end();u++) {
+                        if (k->first.first==u->second) {
+                            for (auto z=u->first.begin();z!=u->first.end();z++) {
+                                if (z->first==i->first) {
+                                    z->second-=kill_diff;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    RefreshTree();
                     ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()+1));
                     found=true;
                     break;
@@ -351,6 +363,17 @@ void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QS
     kills_needed_for_this=kills;
     reward_for_this=reward;
     on_pushButton_6_clicked();
+    for (auto i=factionStation.begin();i!=factionStation.end();i++) {
+        if (i->second==station) {
+            for (auto k=i->first.begin();k!=i->first.end();k++) {
+                if (k->first==faction) {
+                    k->second+=kills;
+                }
+                break;
+            }
+            break;
+        }
+    }
     if (ui->label_10->text().toDouble()<3.0) {
         ui->label_20->setText("Pick up some more missions to complete");
     } else {
@@ -365,6 +388,7 @@ void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QS
     }
     temp_2->second.first.first=ID;
     KillsperFaction();
+    RefreshTree();
 }
 
 void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool do_not_search,int depth,QString Target_system) {
@@ -397,15 +421,15 @@ void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool
                 z->first.push_back(QString::fromStdString((string)current_station["StationName"]));
             }
         }
-        factionStation.push_back({vector<QString>(),QString::fromStdString((string)current_station["StationName"])});
+        factionStation.push_back({vector<pair<QString,int>>(),QString::fromStdString((string)current_station["StationName"])});
         CheckCurrentStation(faction,item->child(item->childCount()-1),true,2);
     } else if (do_not_search && depth==2) {
         ui->treeWidget_3->setCurrentItem(item);
         on_pushButton_3_clicked();
-        item->child(item->childCount()-1)->setText(0,faction);
+        item->child(item->childCount()-1)->setText(0,"[0] "+faction);
         for (auto z=factionStation.begin();z!=factionStation.end();z++) {
             if (z->second==QString::fromStdString((string)current_station["StationName"])) {
-                z->first.push_back(faction);
+                z->first.push_back({faction,0});
             }
         }
         config[ui->systemName->text().toStdString()][(string)current_station["StarSystem"]][(string)current_station["StationName"]][faction.toStdString()]["0"]="0;0;0";
@@ -431,6 +455,27 @@ void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool
         }
         if (!found) {
             CheckCurrentStation(faction,item,true,2);
+        }
+    }
+}
+
+void MainWindow::RefreshTree() {
+    for (auto i=0;i<ui->treeWidget_3->topLevelItem(0)->childCount();i++) {
+        for (auto k=0;k<ui->treeWidget_3->topLevelItem(0)->child(i)->childCount();k++) {
+            QString station=ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->text(0);
+            for (auto u:factionStation) {
+                if (u.second==station) {
+                    for (auto z:u.first) {
+                        for (auto j=0;j<ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->childCount();j++) {
+                            auto faction=ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->child(j);
+                            if (z.first==faction->text(0).section("] ",1,1) || (!faction->text(0).contains("]") && faction->text(0)==z.first)) {
+                                faction->setText(0,"["+QString::number(z.second)+"] "+z.first);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -467,6 +512,7 @@ void MainWindow::on_listWidget_2_itemClicked(QString file_1)
         refreshdata();
         completedData();
         KillsperFaction();
+        RefreshTree();
         int max=0;
         for (auto k=missions.begin();k!=missions.end();k++) {
             total_mission_count+=k->second.first.size();
@@ -563,7 +609,7 @@ void MainWindow::refreshdata(int depth,json *a) {
                         break;
                     }
                 }
-                factionStation.push_back({vector<QString>(),station_name});
+                factionStation.push_back({vector<pair<QString,int>>(),station_name});
                 if (!found_out) {
                     vector<QString> helper;
                     helper.push_back(station_name);
@@ -585,7 +631,15 @@ void MainWindow::refreshdata(int depth,json *a) {
             double rew=0;
             for (auto z=factionStation.begin();z!=factionStation.end();z++) {
                 if (z->second==station_name) {
-                    z->first.push_back(QString::fromStdString((string)i.key()));
+                    QString faction="";
+                    int frags=0;
+                    if (((string)i.key()).find("] ")!=string::npos) {
+                        faction=QString::fromStdString((string)i.key()).section("] ",1,1);
+                        frags=QString::fromStdString((string)i.key()).section("] ",0,0).section("[",1,1).toInt();
+                    } else {
+                        faction=QString::fromStdString((string)i.key());
+                    }
+                    z->first.push_back({faction,frags});
                 }
             }
             for (auto k=b.begin();k!=b.end();k++) {
@@ -605,6 +659,17 @@ void MainWindow::refreshdata(int depth,json *a) {
                 if (!tempor) {
                     kill+=temp[j].second.second.first.first;
                     rew+=temp[j].second.second.second.first;
+                    for (auto u=factionStation.begin();u!=factionStation.end();u++) {
+                        if (u->second==station_name) {
+                            for (auto z=u->first.begin();z!=u->first.end();z++) {
+                                if (z->first==QString::fromStdString((string)i.key())) {
+                                    z->second+=temp[j].second.second.first.first;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
                 }
                 j++;
             }
