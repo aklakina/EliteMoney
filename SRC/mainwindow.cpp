@@ -8,6 +8,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDateTime>
+#include <QClipboard>
+#include <QApplication>
 #include <windows.h>
 
 using namespace std;
@@ -36,8 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(notifier,SIGNAL(directoryChanged(QString)),this,SLOT(OnNewFile(QString)));
     connect(notifier,SIGNAL(fileChanged(const QString &)),this,SLOT(OnNewEvent(const QString &)));
     current_station=json::parse("{ \"timestamp\":\"2021-02-14T23:26:06Z\", \"event\":\"Docked\", \"StationName\":\"Sabine Camp\", \"StationType\":\"Outpost\", \"StarSystem\":\"Cuberara\", \"SystemAddress\":2869440554457, \"MarketID\":3225893888, \"StationFaction\":{ \"Name\":\"Albardhas for Equality\", \"FactionState\":\"Election\" }, \"StationGovernment\":\"$government_Democracy;\", \"StationGovernment_Localised\":\"Democracy\", \"StationServices\":[ \"dock\", \"autodock\", \"blackmarket\", \"commodities\", \"contacts\", \"exploration\", \"missions\", \"refuel\", \"repair\", \"tuning\", \"engineer\", \"missionsgenerated\", \"flightcontroller\", \"stationoperations\", \"powerplay\", \"searchrescue\", \"stationMenu\" ], \"StationEconomy\":\"$economy_Extraction;\", \"StationEconomy_Localised\":\"Extraction\", \"StationEconomies\":[ { \"Name\":\"$economy_Extraction;\", \"Name_Localised\":\"Extraction\", \"Proportion\":0.830000 }, { \"Name\":\"$economy_Refinery;\", \"Name_Localised\":\"Refinery\", \"Proportion\":0.170000 } ], \"DistFromStarLS\":5.187345 }");
-    ui->kills_left->setText("0");
-    ui->kills_made->setText("0");
+    ui->kills_left->setText("0 (100%)");
+    ui->kills_made->setText("0 (0%)");
     QDir saves(QDir::currentPath()+"/System/");
     QDateTime a=saves.entryInfoList().begin()->lastModified();
     QString c=saves.entryInfoList().begin()->canonicalFilePath();
@@ -218,8 +220,9 @@ void MainWindow::OnNewEvent(const QString &file) {
                     }
                     if (max!=0) {
                         total_kills_so_far=max;
-                        ui->kills_made->setText(QString::number(total_kills_so_far));
-                        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
+                        int temp_4=100*total_kills_so_far/max_kills;
+                        ui->kills_made->setText(QString::number(total_kills_so_far)+" ("+QString::number(temp_4)+"%)");
+                        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far)+" ("+QString::number(100-temp_4)+"%)");
                     }
                 } else if ((string)event["event"]=="MissionAbandoned") {
                     qDebug()<<"You Abadoned a mission";
@@ -297,8 +300,9 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     }
                     max_kills=max;
                     ui->label_9->setText(QString::number(max_kills));
-                    ui->kills_made->setText(QString::number(total_kills_so_far));
-                    ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
+                    int temp_4=100*total_kills_so_far/max_kills;
+                    ui->kills_made->setText(QString::number(total_kills_so_far)+" ("+QString::number(temp_4)+"%)");
+                    ui->kills_left->setText(QString::number(max_kills-total_kills_so_far)+" ("+QString::number(100-temp_4)+"%)");
                     if (max_kills!=0) {
                         ui->label_10->setText(QString::number((double)total_kills/(double)max_kills, 'f', 10));
                         if (ui->label_10->text().toDouble()<2.0f) {
@@ -528,8 +532,9 @@ void MainWindow::on_listWidget_2_itemClicked(QString file_1)
         ui->label_9->setText(QString::number(max_kills));
         ui->label_10->setText(QString::number(total_kills/max_kills, 'f', 10));
         ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000/max_kills, 'f', 10));
-        ui->kills_made->setText(QString::number(total_kills_so_far));
-        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
+        int temp_4=100*total_kills_so_far/max_kills;
+        ui->kills_made->setText(QString::number(total_kills_so_far)+" ("+QString::number(temp_4)+"%)");
+        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far)+" ("+QString::number(100-temp_4)+"%)");
     }
 }
 
@@ -852,8 +857,9 @@ void MainWindow::on_pushButton_6_clicked()
     ui->label_9->setText(QString::number(max_kills));
     ui->label_10->setText(QString::number(total_kills/max_kills, 'f', 10));
     ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000000/max_kills, 'f', 10));
-    ui->kills_made->setText(QString::number(total_kills_so_far));
-    ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
+    int temp_4=100*total_kills_so_far/max_kills;
+    ui->kills_made->setText(QString::number(total_kills_so_far)+" ("+QString::number(temp_4)+"%)");
+    ui->kills_left->setText(QString::number(max_kills-total_kills_so_far)+" ("+QString::number(100-temp_4)+"%)");
 }
 
 void MainWindow::on_treeWidget_3_itemClicked(QTreeWidgetItem *item, int column)
@@ -903,8 +909,8 @@ void MainWindow::on_actionStart_new_session_triggered()
     ui->tableWidget->clear();
     ui->tableWidget->setRowCount(0);
     ui->tableWidget->setColumnCount(0);
-    ui->kills_left->setText("0");
-    ui->kills_made->setText("0");
+    ui->kills_left->setText("0 (0%)");
+    ui->kills_made->setText("0 (100%)");
     total_kills_so_far=0;
     ui->treeWidget->clear();
     ui->treeWidget_3->clear();
@@ -936,4 +942,15 @@ void MainWindow::on_horizontalSlider_valueChanged(int value)
     ui->max_theoretycal->setText(QString::number(theor_completed));
     ui->horizontalSlider->setToolTip(QString::number(value));
     ui->Theor_num_kill->setText(QString::number(value));
+}
+
+void MainWindow::on_Copy_data_clicked()
+{
+    QString a="====================================\n";
+    a+="```Total payout "+QString::number(ui->Curr_payout->text().toDouble()/1000)+"$ M for "+ui->Missions_completed->text()+" Missions \n";
+    a+=ui->systemName->text()+"\n";
+    a+="LFW to turn in```\n";
+    a+="====================================";
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(a);
 }

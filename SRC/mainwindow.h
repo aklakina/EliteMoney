@@ -43,6 +43,8 @@ private slots:
 
     void on_horizontalSlider_valueChanged(int value);
 
+    void on_Copy_data_clicked();
+
 private:
     Ui::MainWindow *ui;
     int selecteditem=0;
