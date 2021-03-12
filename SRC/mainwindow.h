@@ -39,6 +39,10 @@ private slots:
 
     void on_actionLoad_session_triggered();
 
+    void on_actionStart_new_session_triggered();
+
+    void on_horizontalSlider_valueChanged(int value);
+
 private:
     Ui::MainWindow *ui;
     int selecteditem=0;
@@ -59,7 +63,7 @@ private:
     map<string,int> MissionTargetFactions;
     string MissionTarget="Nothing_yet";
     json current_station;
-    void CheckCurrentStation(QString &faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
+    void CheckCurrentStation(QString &faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0,QString Target_system="");
     void missionCompleted(unsigned ID,bool remove=false);
     void RemoveMission(unsigned *ID=nullptr,bool remove=false);
     void completedData();
@@ -81,5 +85,6 @@ private:
     QString temp_mission_target;
     void on_pushButton_5_clicked(QString file_1);
     void on_listWidget_2_itemClicked(QString file_1);
+    bool should_i_wait=false;
 };
 #endif // MAINWINDOW_H

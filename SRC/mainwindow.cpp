@@ -7,6 +7,7 @@
 #include <QStandardPaths>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QDateTime>
 #include <windows.h>
 
 using namespace std;
@@ -16,8 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    QDir directory(QDir::currentPath()+"/System/");
-    QStringList configs = directory.entryList();
     ui->label_8->setText("0");
     ui->label_9->setText("0");
     ui->label_10->setText("0");
@@ -39,6 +38,16 @@ MainWindow::MainWindow(QWidget *parent)
     current_station=json::parse("{ \"timestamp\":\"2021-02-14T23:26:06Z\", \"event\":\"Docked\", \"StationName\":\"Sabine Camp\", \"StationType\":\"Outpost\", \"StarSystem\":\"Cuberara\", \"SystemAddress\":2869440554457, \"MarketID\":3225893888, \"StationFaction\":{ \"Name\":\"Albardhas for Equality\", \"FactionState\":\"Election\" }, \"StationGovernment\":\"$government_Democracy;\", \"StationGovernment_Localised\":\"Democracy\", \"StationServices\":[ \"dock\", \"autodock\", \"blackmarket\", \"commodities\", \"contacts\", \"exploration\", \"missions\", \"refuel\", \"repair\", \"tuning\", \"engineer\", \"missionsgenerated\", \"flightcontroller\", \"stationoperations\", \"powerplay\", \"searchrescue\", \"stationMenu\" ], \"StationEconomy\":\"$economy_Extraction;\", \"StationEconomy_Localised\":\"Extraction\", \"StationEconomies\":[ { \"Name\":\"$economy_Extraction;\", \"Name_Localised\":\"Extraction\", \"Proportion\":0.830000 }, { \"Name\":\"$economy_Refinery;\", \"Name_Localised\":\"Refinery\", \"Proportion\":0.170000 } ], \"DistFromStarLS\":5.187345 }");
     ui->kills_left->setText("0");
     ui->kills_made->setText("0");
+    QDir saves(QDir::currentPath()+"/System/");
+    QDateTime a=saves.entryInfoList().begin()->lastModified();
+    QString c=saves.entryInfoList().begin()->canonicalFilePath();
+    for (auto i:saves.entryInfoList()) {
+        if (a>i.lastModified()) {
+            a=i.lastModified();
+            c=i.canonicalFilePath();
+        }
+    }
+    on_listWidget_2_itemClicked(c);
 }
 
 void MainWindow::OnNewFile(const QString &file) {
@@ -130,6 +139,7 @@ void MainWindow::OnNewEvent(const QString &file) {
             }  catch (const std::exception& e) {
                 qDebug()<<lastEvent;
                 qDebug()<<e.what();
+                should_i_wait=true;
                 return;
             }
             bool found=false;
@@ -206,9 +216,11 @@ void MainWindow::OnNewEvent(const QString &file) {
                             }
                         }
                     }
-                    total_kills_so_far=max;
-                    ui->kills_made->setText(QString::number(total_kills_so_far));
-                    ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
+                    if (max!=0) {
+                        total_kills_so_far=max;
+                        ui->kills_made->setText(QString::number(total_kills_so_far));
+                        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
+                    }
                 } else if ((string)event["event"]=="MissionAbandoned") {
                     qDebug()<<"You Abadoned a mission";
                     missionCompleted((unsigned)event["MissionID"]);
@@ -221,6 +233,11 @@ void MainWindow::OnNewEvent(const QString &file) {
                 on_pushButton_5_clicked("./System/AutoBackup_"+ui->systemName->text()+".json");
             }
         }
+    }
+    if (should_i_wait) {
+        delete &changed;
+        Sleep(15000);
+        should_i_wait=false;
     }
 }
 
@@ -284,6 +301,11 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     ui->kills_left->setText(QString::number(max_kills-total_kills_so_far));
                     if (max_kills!=0) {
                         ui->label_10->setText(QString::number((double)total_kills/(double)max_kills, 'f', 10));
+                        if (ui->label_10->text().toDouble()<2.0f) {
+                            ui->label_20->setText("Stop hunting and go back and turn in your missions");
+                        } else {
+                            ui->label_20->setText("You can continue the fun");
+                        }
                         ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000/max_kills, 'f', 10));
                     } else {
                         ui->label_10->setText("0");
@@ -294,6 +316,7 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     RemoveMission(&ID);
                     completedData();
                     KillsperFaction();
+                    ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()+1));
                     found=true;
                     break;
                 } else {
@@ -302,6 +325,7 @@ void MainWindow::missionCompleted(unsigned ID,bool remove) {
                     RemoveMission(&ID,remove);
                     completedData();
                     KillsperFaction();
+                    ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()-1));
                     found=true;
                     break;
                 }
@@ -320,13 +344,18 @@ void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QS
         ui->systemName->setText(QString::fromStdString(dest));
     }
     ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->topLevelItem(0));
-    CheckCurrentStation(faction);
+    CheckCurrentStation(faction,nullptr,false,0,QString::fromStdString(dest));
     ui->treeWidget->clear();
     station=QString::fromStdString((string)current_station["StationName"]);
     faction_global=faction;
     kills_needed_for_this=kills;
     reward_for_this=reward;
     on_pushButton_6_clicked();
+    if (ui->label_10->text().toDouble()<3.0) {
+        ui->label_20->setText("Pick up some more missions to complete");
+    } else {
+        ui->label_20->setText("You can go and kill some pirate scum");
+    }
     auto temp=&(missions.find(faction)->second.first);
     auto temp_2=temp->begin();
     for (auto k=temp->begin();k!=temp->end();k++) {
@@ -338,7 +367,11 @@ void MainWindow::addMission(string dest,int kills, double reward, unsigned ID,QS
     KillsperFaction();
 }
 
-void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool do_not_search,int depth) {
+void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool do_not_search,int depth,QString Target_system) {
+    if (ui->treeWidget_3->topLevelItemCount()==0) {
+        on_pushButton_3_clicked();
+        ui->treeWidget_3->topLevelItem(0)->setText(0,Target_system);
+    }
     if (item==nullptr) {
         bool found=false;
         for (auto i=0;i<ui->treeWidget_3->topLevelItem(0)->childCount();i++) {
@@ -443,7 +476,8 @@ void MainWindow::on_listWidget_2_itemClicked(QString file_1)
             ui->label_8->setText(QString::number(ui->label_8->text().toDouble()+k->second.second.second));
         }
         max_kills=max;
-        MissionTarget=(string)config["Total kills so far"].begin().key();
+        ui->horizontalSlider->setMaximum(max);
+        ui->systemName->setText(QString::fromStdString((string)config.begin().key()));
         total_kills_so_far=QString::fromStdString((string)config["Total kills so far"].begin().value()).toInt();
         ui->label_9->setText(QString::number(max_kills));
         ui->label_10->setText(QString::number(total_kills/max_kills, 'f', 10));
@@ -454,6 +488,7 @@ void MainWindow::on_listWidget_2_itemClicked(QString file_1)
 }
 
 void MainWindow::completedData() {
+    ui->Curr_payout->setText("0");
     for (auto i:systemStation) {
         for (auto z:i.first) {
             QTreeWidgetItem * temp=new QTreeWidgetItem();
@@ -464,12 +499,14 @@ void MainWindow::completedData() {
                         QTreeWidgetItem * temp_1=new QTreeWidgetItem();
                         temp_1->setText(0,k.first+"::     "+QString::number(j.second.second.second.first)+"$ K");
                         temp->addChild(temp_1);
+                        ui->Curr_payout->setText(QString::number(ui->Curr_payout->text().toDouble()+j.second.second.second.first));
                     }
                 }
             }
             ui->treeWidget->addTopLevelItem(temp);
         }
     }
+    ui->treeWidget->expandAll();
 }
 
 void MainWindow::RemoveMission(unsigned *ID,bool remove) {
@@ -559,6 +596,7 @@ void MainWindow::refreshdata(int depth,json *a) {
 
                 } else {
                     tempor=true;
+                    ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()+1));
                 }
                 if (!current_station.empty()) {
                     station_name=QString::fromStdString((string)current_station["StationName"]);
@@ -574,7 +612,7 @@ void MainWindow::refreshdata(int depth,json *a) {
         }
         ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->currentItem()->parent());
     }
-
+    ui->treeWidget_3->expandAll();
 }
 
 void MainWindow::on_pushButton_3_clicked()
@@ -596,21 +634,23 @@ void MainWindow::on_pushButton_3_clicked()
 
 void MainWindow::on_pushButton_5_clicked(QString file_1)
 {
-    QFile file(file_1);
-    if (file.open(QIODevice::WriteOnly)) {
-        QTextStream stream(&file);
-        QTreeWidgetItem *item=ui->treeWidget_3->topLevelItem(0);
-        string a="{ \""+item->text(0).toStdString()+"\":";
-        configreader(item,a);
-        QString b=QString::fromStdString(a);
-        b.remove("\\");
-        b.remove(0,0);
-        b.remove(b.length(),0);
-        b+=",\"Total kills so far\":{\""+QString::fromStdString(MissionTarget)+"\":\""+QString::number(total_kills_so_far)+"\"}}";
-        b.remove("\\");
-        stream<<b;
-    } else {
-        QMessageBox::warning(this,tr("Error while trying to save session"),tr("Could not open given file"));
+    if (!config.empty()) {
+        QFile file(file_1);
+        if (file.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&file);
+            QTreeWidgetItem *item=ui->treeWidget_3->topLevelItem(0);
+            string a="{ \""+item->text(0).toStdString()+"\":";
+            configreader(item,a);
+            QString b=QString::fromStdString(a);
+            b.remove("\\");
+            b.remove(0,0);
+            b.remove(b.length(),0);
+            b+=",\"Total kills so far\":{\""+QString::fromStdString(MissionTarget)+"\":\""+QString::number(total_kills_so_far)+"\"}}";
+            b.remove("\\");
+            stream<<b;
+        } else {
+            QMessageBox::warning(this,tr("Error while trying to save session"),tr("Could not open given file"));
+        }
     }
 }
 
@@ -743,6 +783,7 @@ void MainWindow::on_pushButton_6_clicked()
     }
     total_mission_count++;
     max_kills=max;
+    ui->horizontalSlider->setMaximum(max);
     ui->label_9->setText(QString::number(max_kills));
     ui->label_10->setText(QString::number(total_kills/max_kills, 'f', 10));
     ui->label_11->setText(QString::number(ui->label_8->text().toDouble()*1000000/max_kills, 'f', 10));
@@ -789,4 +830,45 @@ void MainWindow::on_actionLoad_session_triggered()
     QString fileName = QFileDialog::getOpenFileName(this,
         tr("Select file to Load"), "./System", tr("Save Files (*.json)"));
     on_listWidget_2_itemClicked(fileName);
+}
+
+void MainWindow::on_actionStart_new_session_triggered()
+{
+    GarbageCollector();
+    ui->tableWidget->clear();
+    ui->tableWidget->setRowCount(0);
+    ui->tableWidget->setColumnCount(0);
+    ui->kills_left->setText("0");
+    ui->kills_made->setText("0");
+    total_kills_so_far=0;
+    ui->treeWidget->clear();
+    ui->treeWidget_3->clear();
+    config.clear();
+    missions.clear();
+    current_station.clear();
+    factionStation.clear();
+    systemStation.clear();
+    ui->Missions_completed->setText("0");
+    ui->Curr_payout->setText("0");
+    ui->horizontalSlider->setMaximum(1);
+}
+
+void MainWindow::on_horizontalSlider_valueChanged(int value)
+{
+    int theor_completed=0;
+    double theor_rew=0;
+    for (auto i:missions) {
+        int temp=value;
+        for (auto k:i.second.first) {
+            if (0<=temp-k.second.second.first.first) {
+                temp=temp-k.second.second.first.first;
+                theor_completed++;
+                theor_rew+=k.second.second.second.first;
+            }
+        }
+    }
+    ui->Reward->setText(QString::number(theor_rew));
+    ui->max_theoretycal->setText(QString::number(theor_completed));
+    ui->horizontalSlider->setToolTip(QString::number(value));
+    ui->Theor_num_kill->setText(QString::number(value));
 }
