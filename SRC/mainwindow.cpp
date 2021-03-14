@@ -145,9 +145,11 @@ void MainWindow::OnNewEvent(const QString &file) {
                 return;
             }
             bool found=false;
-            if (events.find(temp)!=events.end()) {
-                qDebug()<<"skipping since event already loaded";
-                found=true;
+            for (auto k:events) {
+                if (k==temp) {
+                    qDebug()<<"skipping since event already loaded";
+                    found=true;
+                }
             }
             if (!found) {
                 event=temp;
@@ -228,7 +230,37 @@ void MainWindow::OnNewEvent(const QString &file) {
                     qDebug()<<"You Abadoned a mission";
                     missionCompleted((unsigned)event["MissionID"]);
                     missionCompleted((unsigned)event["MissionID"],true);
-                }
+                } /*else if ((string)event["event"]=="Missions") {
+                    if (!GettingMissions) {
+                        for (unsigned k=0;k<event["Active"].size();k++) {
+                            auto ID=(unsigned)event["Active"].at(k)["MissionID"];
+                            bool found=false;
+                            for (auto i=missions.begin();i!=missions.end();i++) {
+                                for (auto j=i->second.first.begin();j!=i->second.first.end();j++) {
+                                    if (j->second.first.first==ID && j->second.second.second.second==((unsigned)event["Active"].at(k)["Expires"]==0)) {
+                                        found=true;
+                                        goto exit;
+                                    }
+                                }
+                            }
+                            if (!found) {
+                                Current_Missions.insert({ID,(unsigned)event["Active"].at(k)["Expires"]==0});
+                            }
+                            exit:
+                            continue;
+                        }
+                        GetMissions();
+                    } else {
+                        map<unsigned,bool> temporary;
+                        for (unsigned k=0;k<event["Active"].size();k++) {
+                            auto ID=(unsigned)event["Active"].at(k)["MissionID"];
+                            if (Current_Missions.find(ID)!=Current_Missions.end()) {
+                                temporary.insert(*Current_Missions.find(ID));
+                            }
+                        }
+                        Current_Missions=temporary;
+                    }
+                }*/
                 } catch (const std::exception& e) {
                     qDebug()<<lastEvent;
                     qDebug()<<e.what();
@@ -241,6 +273,25 @@ void MainWindow::OnNewEvent(const QString &file) {
         delete &changed;
         Sleep(15000);
         should_i_wait=false;
+    }
+}
+
+void MainWindow::GetMissions() {
+    GettingMissions=true;
+    QStringList path1=QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+    QDir base(path1.first()+"/Saved Games/Frontier Developments/Elite Dangerous");
+    auto files=base.entryList();
+    for (auto i=files.end()-13;i!=files.end();i++) {
+        if (i->contains(".log") && i->contains("Journal.")) {
+            OnNewEvent(*i);
+            if (Current_Missions.size()>0) {
+                i-=2;
+            }
+        } else {
+            if (Current_Missions.size()>0) {
+                i-=2;
+            }
+        }
     }
 }
 
@@ -452,7 +503,13 @@ void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool
     } else if (!do_not_search && depth==2) {
         bool found=false;
         for (auto i=0;i<item->childCount();i++) {
-            if (item->child(i)->text(0)==faction) {
+            QString temp;
+            if (item->child(i)->text(0).contains("] ")) {
+                temp=item->child(i)->text(0).section("] ",1,1);
+            } else {
+                temp=item->child(i)->text(0);
+            }
+            if (temp==faction) {
                 found=true;
                 break;
             }
@@ -464,19 +521,32 @@ void MainWindow::CheckCurrentStation(QString &faction,QTreeWidgetItem* item,bool
 }
 
 void MainWindow::RefreshTree() {
+    auto GetFactionName=[](QTreeWidgetItem* a)->QString {
+        if (a->text(0).contains("] ")) {
+            return a->text(0).section("] ",1,1);
+        } else {
+            return a->text(0);
+        }
+    };
     for (auto i=0;i<ui->treeWidget_3->topLevelItem(0)->childCount();i++) {
         for (auto k=0;k<ui->treeWidget_3->topLevelItem(0)->child(i)->childCount();k++) {
             QString station=ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->text(0);
+            int Total_kills=0;
+            map<QString,int> some_helper;
             for (auto u:factionStation) {
-                if (u.second==station) {
-                    for (auto z:u.first) {
-                        for (auto j=0;j<ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->childCount();j++) {
-                            auto faction=ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->child(j);
-                            if (z.first==faction->text(0).section("] ",1,1) || (!faction->text(0).contains("]") && faction->text(0)==z.first)) {
-                                faction->setText(0,"["+QString::number(z.second)+"] "+z.first);
-                                break;
-                            }
-                        }
+                for (auto z:u.first) {
+                    auto done=some_helper.insert({z.first,z.second});
+                    if (done.second) {
+                        done.first->second+=Total_kills;
+                    }
+                }
+            }
+            for (auto j=0;j<ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->childCount();j++) {
+                auto faction=ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->child(j);
+                for (auto z:some_helper) {
+                    if (z.first==faction->text(0).section("] ",1,1) || (!faction->text(0).contains("]") && faction->text(0)==z.first)) {
+                        faction->setText(0,"["+QString::number(z.second)+"] "+GetFactionName(faction));
+                        break;
                     }
                 }
             }
@@ -731,14 +801,18 @@ void MainWindow::configreader(QTreeWidgetItem* item, string &a) {
         a+="\"0\"";
     }
     for (int i=0; i<item->childCount();i++) {
-        a+="\""+item->child(i)->text(0).toStdString()+"\":";
+        if (item->child(i)->text(0).contains("] ") && item->child(i)->text(0).contains("[")) {
+            a+="\""+item->child(i)->text(0).section("] ",1,1).toStdString()+"\":";
+        } else {
+            a+="\""+item->child(i)->text(0).toStdString()+"\":";
+        }
         if (item->child(i)->childCount()!=0) {
             configreader(item->child(i),a);
             if (i!=item->childCount()-1)
                 a+=",";
         } else {
             a+="{";
-            auto result_1=missions.find(item->child(i)->text(0));
+            auto result_1=missions.find(item->child(i)->text(0).section("] ",1,1));
             item->text(0);
             if (result_1==missions.end()) {
                 a+="\""+QString::number(i).toStdString()+"\":\""+
@@ -759,8 +833,8 @@ void MainWindow::configreader(QTreeWidgetItem* item, string &a) {
                     } else {
                         tempor=1;
                     }
-                    a+="\""+QString::number(result.at(i).second.first.first).toStdString()+"\":\""+
-                            QString::number(result.at(i).second.second.first.first).toStdString()
+                    a+="\""+QString::number(result[i].second.first.first).toStdString()+"\":\""+
+                            QString::number(result[i].second.second.first.first).toStdString()
                             +";"+
                             QString::number(result.at(i).second.second.first.second).toStdString()
                             +";"+
@@ -947,9 +1021,34 @@ void MainWindow::on_horizontalSlider_valueChanged(int value)
 void MainWindow::on_Copy_data_clicked()
 {
     QString a="====================================\n";
-    a+="```Total payout "+QString::number(ui->Curr_payout->text().toDouble()/1000)+"$ M for "+ui->Missions_completed->text()+" Missions \n";
+    a+="```Total payout "+QString::number(ui->Curr_payout->text().toDouble()/1000)+"$ Mill for "+ui->Missions_completed->text()+" Missions \n";
     a+=ui->systemName->text()+"\n";
     a+="LFW to turn in```\n";
+    a+="====================================";
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(a);
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    int Total_missions=0;
+    for (auto i:missions) {
+        for (auto k:i.second.first) {
+            if (!k.second.second.second.second) {
+                Total_missions++;
+            }
+        }
+    }
+    QString a="====================================\n";
+    a+="```Total payout "+QString::number((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number((ui->Missions_completed->text().toInt()+Total_missions))+" Missions \n";
+    if (ui->Missions_completed->text().toInt()>0)
+        a+="Completed: "+QString::number((ui->Curr_payout->text().toDouble())/1000)+"$ Mill for "+ui->Missions_completed->text()+" Mission(s) \n";
+    if (total_mission_count>0)
+        a+="Active: "+QString::number((ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number(Total_missions)+" Mission(s) \n";
+    a+="Stack Height: "+QString::number(max_kills)+" Stack Width: "+QString::number(missions.size())+"\n";
+    a+="Current Ratio: "+ui->label_10->text()+" Mission average payout: "+QString::number(((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)/(double)(ui->Missions_completed->text().toInt()+Total_missions))+"$ Mill \nReward per kill (Bounty not included): "+QString::number(((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)/(double)max_kills)+"$ Mill\n";
+    a+="Mission target system: "+ui->systemName->text()+"\n";
+    a+="LFW to Complete/Turn in```\n";
     a+="====================================";
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(a);

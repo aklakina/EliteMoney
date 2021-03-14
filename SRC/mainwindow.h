@@ -22,6 +22,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    vector<pair<vector<pair<QString,int>>,QString>> factionStation;
 
 private slots:
 
@@ -44,6 +45,8 @@ private slots:
     void on_horizontalSlider_valueChanged(int value);
 
     void on_Copy_data_clicked();
+
+    void on_pushButton_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -83,11 +86,13 @@ private:
     QString station="";
     vector<pair<vector<QString>,QString>> systemStation;
     QString system_namee;
-    vector<pair<vector<pair<QString,int>>,QString>> factionStation;
     QString temp_mission_target;
     void on_pushButton_5_clicked(QString file_1);
     void on_listWidget_2_itemClicked(QString file_1);
     bool should_i_wait=false;
     void RefreshTree();
+    map<unsigned,bool> Current_Missions;
+    void GetMissions();
+    bool GettingMissions=false;
 };
 #endif // MAINWINDOW_H
