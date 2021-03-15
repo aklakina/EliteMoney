@@ -269,11 +269,11 @@ void MainWindow::OnNewEvent(const QString &file) {
             }
         }
     }
-    if (should_i_wait) {
+    /*if (should_i_wait) {
         delete &changed;
         Sleep(15000);
         should_i_wait=false;
-    }
+    }*/
 }
 
 void MainWindow::GetMissions() {
