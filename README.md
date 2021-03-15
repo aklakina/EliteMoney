@@ -13,12 +13,18 @@ The app handles it automaticaly
 To save a session click "file..." on the upper left and select save and there write a name on the bottom field. The session will be saved under that_name.json.
 ## The right panel
 By default this panel is empty. As you go and pick up missions it should start to fill up.
-This panel contains the system hierarchy. When expanded you will see a format like this:\\
-system_main:\\
-system1:\\
-station1:\\
+This panel contains the system hierarchy. When expanded you will see a format like this:
+
+system_main:
+
+system1:
+
+station1:
+
 \[number\]faction1
+
 \[number\]faction2
+
 station2:
 etc
 Here the numbers indicating the stack hight for the given faction.
