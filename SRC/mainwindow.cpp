@@ -127,153 +127,118 @@ void MainWindow::KillsperFaction() {
 }
 
 void MainWindow::OnNewEvent(const QString &file) {
+    Sleep(3000);
     QFile changed(file);
     qDebug()<<"event started file opened";
     if (changed.open(QIODevice::ReadOnly)) {
         QTextStream stream(&changed);
         QString lastEvent="";
-        json temp;
         json event;
         while (!stream.atEnd()) {
             lastEvent=stream.readLine();
-            try {
-                temp=json::parse(lastEvent.toStdString());
-            }  catch (const std::exception& e) {
-                qDebug()<<lastEvent;
-                qDebug()<<e.what();
-                should_i_wait=true;
-                return;
-            }
             bool found=false;
-            for (auto k:events) {
-                if (k==temp) {
-                    qDebug()<<"skipping since event already loaded";
-                    found=true;
-                }
+            if (events.find(lastEvent)!=events.end()) {
+                qDebug()<<"skipping since event already loaded";
+                found=true;
             }
             if (!found) {
-                event=temp;
-                events.push_back(temp);
                 try {
-                if ((string)event["event"]=="MissionAccepted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
-                    MissionTargetFactions.insert({(string)event["TargetFaction"],0});
-                    if (MissionTarget=="Nothing_yet") {
-                        MissionTarget=(string)event["TargetFaction"];
-                    }
-                    temp_mission_target=QString::fromStdString((string)event["TargetFaction"]);
-                    addMission((string)event["DestinationSystem"],(int)event["KillCount"],(double)event["Reward"]/1000,(unsigned)event["MissionID"],QString::fromStdString((string)event["Faction"]));
-                } else if ((string)event["event"]=="MissionRedirected" && ((string)event["Name"]).find("Massacre")!=string::npos) {
-                    missionCompleted((unsigned)event["MissionID"]);
-                } else if ((string)event["event"]=="MissionCompleted") {
-                    missionCompleted((unsigned)event["MissionID"],true);
-                } else if ((string)event["event"]=="Docked") {
-                    current_station=event;
-                    for (auto i:factionStation) {
-                        if ((string)current_station["StationName"]==i.second.toStdString()) {
-                            for (auto z:i.first) {
-                                for (auto j=0;j<ui->tableWidget->rowCount();j++) {
-                                    if (ui->tableWidget->item(j,0)->text()==z.first) {
-                                        for (auto z=0;z<ui->tableWidget->columnCount();z++) {
-                                            ui->tableWidget->item(j,z)->setBackground(QBrush(QColor(10,90,170)));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (ui->treeWidget->topLevelItemCount()!=0) {
-                        resetTreeColor();
-                        ui->treeWidget->collapseAll();
-                        ui->treeWidget->expandItem(ui->treeWidget->topLevelItem(0));
-                        QTreeWidgetItem* temp;
-                        temp=ui->treeWidget->topLevelItem(0);
-                        for (auto i=0;i<temp->childCount();i++) {
-                            if (temp->child(i)->text(0).toStdString()==(string)current_station["StarSystem"]) {
-                                temp=temp->child(i);
-                                temp->setBackground(0,QBrush(QColor(10,90,170)));
-                                ui->treeWidget->expandItem(temp);
-                                break;
-                            }
-                        }
-                        for (auto i=0;i<temp->childCount();i++) {
-                            if (temp->child(i)->text(0).toStdString()==(string)current_station["StationName"]) {
-                                temp=temp->child(i);
-                                temp->setBackground(0,QBrush(QColor(10,90,170)));
-                                ui->treeWidget->expandItem(temp);
-                                break;
-                            }
-                        }
-                        for (auto i=0;i<temp->childCount();i++) {
-                            ui->treeWidget->expandItem(temp->child(i));
-                        }
-                    }
-                } else if ((string)event["event"]=="Bounty") {
-                    int max=0;
-                    for (auto i=missions.begin();i!=missions.end();i++) {
-                        for (auto k=i->second.first.begin();k!=i->second.first.end();k++) {
-                            if ((string)event["VictimFaction"]==k->second.first.second.toStdString() && !k->second.second.second.second) {
-                                k->second.second.first.second+=1;
-                                if (max<k->second.second.first.second) {
-                                    max=k->second.second.first.second;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    if (max!=0) {
-                        total_kills_so_far=max;
-                        int temp_4=100*total_kills_so_far/max_kills;
-                        ui->kills_made->setText(QString::number(total_kills_so_far)+" ("+QString::number(temp_4)+"%)");
-                        ui->kills_left->setText(QString::number(max_kills-total_kills_so_far)+" ("+QString::number(100-temp_4)+"%)");
-                    }
-                } else if ((string)event["event"]=="MissionAbandoned") {
-                    qDebug()<<"You Abadoned a mission";
-                    missionCompleted((unsigned)event["MissionID"]);
-                    missionCompleted((unsigned)event["MissionID"],true);
-                } /*else if ((string)event["event"]=="Missions") {
-                    if (!GettingMissions) {
-                        for (unsigned k=0;k<event["Active"].size();k++) {
-                            auto ID=(unsigned)event["Active"].at(k)["MissionID"];
-                            bool found=false;
-                            for (auto i=missions.begin();i!=missions.end();i++) {
-                                for (auto j=i->second.first.begin();j!=i->second.first.end();j++) {
-                                    if (j->second.first.first==ID && j->second.second.second.second==((unsigned)event["Active"].at(k)["Expires"]==0)) {
-                                        found=true;
-                                        goto exit;
-                                    }
-                                }
-                            }
-                            if (!found) {
-                                Current_Missions.insert({ID,(unsigned)event["Active"].at(k)["Expires"]==0});
-                            }
-                            exit:
-                            continue;
-                        }
-                        GetMissions();
-                    } else {
-                        map<unsigned,bool> temporary;
-                        for (unsigned k=0;k<event["Active"].size();k++) {
-                            auto ID=(unsigned)event["Active"].at(k)["MissionID"];
-                            if (Current_Missions.find(ID)!=Current_Missions.end()) {
-                                temporary.insert(*Current_Missions.find(ID));
-                            }
-                        }
-                        Current_Missions=temporary;
-                    }
-                }*/
-                } catch (const std::exception& e) {
+                    event=json::parse(lastEvent.toStdString());
+                    events.insert(lastEvent);
+                    HandleEvent(event);
+                    on_pushButton_5_clicked("./System/AutoBackup_"+ui->systemName->text()+".json");
+                }  catch (const std::exception& e) {
                     qDebug()<<lastEvent;
                     qDebug()<<e.what();
                 }
-                on_pushButton_5_clicked("./System/AutoBackup_"+ui->systemName->text()+".json");
             }
         }
     }
-    /*if (should_i_wait) {
-        delete &changed;
-        Sleep(15000);
-        should_i_wait=false;
-    }*/
+}
+
+
+void MainWindow::HandleEvent(json event) {
+    try {
+        if ((string)event["event"]=="MissionAccepted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
+            MissionTargetFactions.insert({(string)event["TargetFaction"],0});
+            if (MissionTarget=="Nothing_yet") {
+                MissionTarget=(string)event["TargetFaction"];
+            }
+            temp_mission_target=QString::fromStdString((string)event["TargetFaction"]);
+            addMission((string)event["DestinationSystem"],(int)event["KillCount"],(double)event["Reward"]/1000,(unsigned)event["MissionID"],QString::fromStdString((string)event["Faction"]));
+        } else if ((string)event["event"]=="MissionRedirected" && ((string)event["Name"]).find("Massacre")!=string::npos) {
+            missionCompleted((unsigned)event["MissionID"]);
+        } else if ((string)event["event"]=="MissionCompleted") {
+            missionCompleted((unsigned)event["MissionID"],true);
+        } else if ((string)event["event"]=="Docked") {
+            current_station=event;
+            for (auto i:factionStation) {
+                if ((string)current_station["StationName"]==i.second.toStdString()) {
+                    for (auto z:i.first) {
+                        for (auto j=0;j<ui->tableWidget->rowCount();j++) {
+                            if (ui->tableWidget->item(j,0)->text()==z.first) {
+                                for (auto z=0;z<ui->tableWidget->columnCount();z++) {
+                                    ui->tableWidget->item(j,z)->setBackground(QBrush(QColor(10,90,170)));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (ui->treeWidget->topLevelItemCount()!=0) {
+                resetTreeColor();
+                ui->treeWidget->collapseAll();
+                ui->treeWidget->expandItem(ui->treeWidget->topLevelItem(0));
+                QTreeWidgetItem* temp;
+                temp=ui->treeWidget->topLevelItem(0);
+                for (auto i=0;i<temp->childCount();i++) {
+                    if (temp->child(i)->text(0).toStdString()==(string)current_station["StarSystem"]) {
+                        temp=temp->child(i);
+                        temp->setBackground(0,QBrush(QColor(10,90,170)));
+                        ui->treeWidget->expandItem(temp);
+                        break;
+                    }
+                }
+                for (auto i=0;i<temp->childCount();i++) {
+                    if (temp->child(i)->text(0).toStdString()==(string)current_station["StationName"]) {
+                        temp=temp->child(i);
+                        temp->setBackground(0,QBrush(QColor(10,90,170)));
+                        ui->treeWidget->expandItem(temp);
+                        break;
+                    }
+                }
+                for (auto i=0;i<temp->childCount();i++) {
+                    ui->treeWidget->expandItem(temp->child(i));
+                }
+            }
+        } else if ((string)event["event"]=="Bounty") {
+            int max=0;
+            for (auto i=missions.begin();i!=missions.end();i++) {
+                for (auto k=i->second.first.begin();k!=i->second.first.end();k++) {
+                    if ((string)event["VictimFaction"]==k->second.first.second.toStdString() && !k->second.second.second.second) {
+                        k->second.second.first.second+=1;
+                        if (max<k->second.second.first.second) {
+                            max=k->second.second.first.second;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (max!=0) {
+                total_kills_so_far=max;
+                int temp_4=100*total_kills_so_far/max_kills;
+                ui->kills_made->setText(QString::number(total_kills_so_far)+" ("+QString::number(temp_4)+"%)");
+                ui->kills_left->setText(QString::number(max_kills-total_kills_so_far)+" ("+QString::number(100-temp_4)+"%)");
+            }
+        } else if ((string)event["event"]=="MissionAbandoned") {
+            qDebug()<<"You Abadoned a mission";
+            missionCompleted((unsigned)event["MissionID"]);
+            missionCompleted((unsigned)event["MissionID"],true);
+        }
+    } catch (const std::exception& e) {
+        qDebug()<<QString::fromStdString(event.dump());
+        qDebug()<<e.what();
+    }
 }
 
 void MainWindow::GetMissions() {

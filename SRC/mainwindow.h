@@ -73,7 +73,7 @@ private:
     void RemoveMission(unsigned *ID=nullptr,bool remove=false);
     void completedData();
     QStringList originalContent;
-    json events;
+    set<QString> events;
     bool checkingifdone,therewasanother;
     int total_kills_so_far=0;
     void resetTreeColor();
@@ -94,5 +94,6 @@ private:
     map<unsigned,bool> Current_Missions;
     void GetMissions();
     bool GettingMissions=false;
+    void HandleEvent(json event);
 };
 #endif // MAINWINDOW_H
