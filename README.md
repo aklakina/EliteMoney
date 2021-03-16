@@ -4,6 +4,8 @@ Mission overview program for Elite Dangerous massacre
 Download the release.zip file and extract it to a directory where you can find it easily.
 
 Enjoy.
+[Installer download link](https://github.com/aklakina/EliteMoney/raw/main/bin/windows/x64/EliteMoney_Setup.exe)
+[Zip download link](https://github.com/aklakina/EliteMoney/raw/main/bin/windows/x64/release.zip)
 # Usage
 You need to open Elite Dangerous first, sign in and connect to a session (open/private/solo). After this open this program. Go back to elite and start doing mission pickups and killing. It requires no user interaction at all and it will synchronize everything from the current session. ***It can not load missions kills and others from previous sessions!***
 ## Reloading 
