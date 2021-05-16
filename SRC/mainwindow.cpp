@@ -10,7 +10,6 @@
 #include <QDateTime>
 #include <QClipboard>
 #include <QApplication>
-#include <windows.h>
 
 using namespace std;
 
@@ -44,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     QDateTime a=saves.entryInfoList().begin()->lastModified();
     QString c=saves.entryInfoList().begin()->canonicalFilePath();
     for (auto i:saves.entryInfoList()) {
-        if (a>i.lastModified()) {
+        if (a<i.lastModified()) {
             a=i.lastModified();
             c=i.canonicalFilePath();
         }
@@ -127,7 +126,7 @@ void MainWindow::KillsperFaction() {
 }
 
 void MainWindow::OnNewEvent(const QString &file) {
-    Sleep(3000);
+    //Sleep(3000);
     QFile changed(file);
     qDebug()<<"event started file opened";
     if (changed.open(QIODevice::ReadOnly)) {
