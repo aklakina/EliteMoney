@@ -2,10 +2,10 @@
 #define DATA_H
 
 #include <QObject>
-#include "mainwindow.h"
 #include "containerobject.h"
 #include "ui_mainwindow.h"
 #include "api.h"
+#include <QTreeWidget>
 
 using namespace std;
 
@@ -39,22 +39,35 @@ namespace techlevi {
 
         void missionCompleted(unsigned ID,bool remove=false);
 
-        void RemoveMission(unsigned *ID=nullptr,bool remove=false);
+        void RemoveMission(unsigned *ID=nullptr);
 
         void addMission(string dest,int kills, double reward, unsigned ID,QString Sfaction, QString Tfaction);
 
         map<set<huntedSystem*>::iterator,Statistics> getStatistics();
 
-        Statistics getUnifiedStatistics();
-
         Result parseData(Input input);
+
+        const GlobalFactions& getFactions() {return *globalFactions;}
+
+        unsigned getStackHeight() {return globalFactions->stackHeight;}
+
+        unsigned getStackWidth() {return globalFactions->stackWidth();}
+
+        set<faction*>::iterator getFaction(QString name) {return globalFactions->find(name);}
+
+        set<faction*>::iterator FactionsEnd() {return globalFactions->end();}
+
+        set<faction*>::iterator FactionsBegin() {return globalFactions->begin();}
+
     signals:
 
-        void Refresh(GlobalFactions &faction, HuntedSystems & targetSystem);
+        void Refresh(GlobalFactions const &faction, HuntedSystems const & targetSystem, mission const & m, bool deleted=false);
 
-        void UpdateTree();
+        void UpdateTree(GlobalFactions const & GlobalFactions);
 
         void addTreeItem();
+
+        void RefreshUI(bool switcher,GlobalFactions const & faction);
 
     private:
 
@@ -68,6 +81,15 @@ namespace techlevi {
 
         currentStation *CurrentStation;
 
+        void RecursiveDataReader(QTreeWidgetItem* item, string &a);
+
+        void refreshdata(int depth=0, json *SavedData=nullptr, techlevi::Input * input=nullptr);
+
+    public slots:
+
+        void getUnifiedStatistics(Statistics* input);
+
+        void getJsonFormattedData(string * input,QTreeWidgetItem* item=nullptr);
 
     };
 }

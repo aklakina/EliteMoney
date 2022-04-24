@@ -55,7 +55,21 @@ typename set<T*>::iterator AdvancedContainer<T>::find(QString name) const
 {
     return container.find(name);
 }
-
+template<>
+set<faction*>::iterator AdvancedContainer<faction>::findF(QString name) const {
+    faction* temp=new faction(name);
+    auto res=container.find(temp);
+    delete temp;
+    return res;
+}
+/*
+template<class T>
+typename set<T*>::iterator AdvancedContainer<T>::find(QString name)
+{
+    typename set<T*>::iterator temp=container.find(name);
+    return temp;
+}
+*/
 template<class T>
 pair<typename set<T*>::iterator, bool> AdvancedContainer<T>::add(T*& input)
 {
@@ -246,7 +260,7 @@ faction *huntedSystem::findFaction(QString faction)
 {
     for (auto system:container) {
         for (auto station:*system) {
-            auto res=station->find(faction);
+            auto res=station->findF(faction);
             if (res!=station->end()) return *res;
         }
     }

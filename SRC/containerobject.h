@@ -7,6 +7,7 @@
 #include <QString>
 #include <QObject>
 
+
 using namespace std;
 #pragma }
 
@@ -22,6 +23,9 @@ struct defaultPointerCmp {
     {
         return (*a) < (*b);
     }
+    bool operator()(const std::_Rb_tree_const_iterator<huntedSystem*> & a, const std::_Rb_tree_const_iterator<huntedSystem*> & b) const {
+        return (*a)<(*b);
+    }
 };
 struct Statistics {
     unsigned totalKillsNeeded=0,killsSoFar=0,totalNumberOfMissions=0,completedMissions=0;
@@ -32,9 +36,9 @@ struct Statistics {
         this->totalNumberOfMissions+=x.totalNumberOfMissions;
         this->completedMissions+=x.completedMissions;
         this->totalPayout+=x.totalPayout;
+        return *this;
     }
 };
-
 #pragma }
 
 #pragma BaseClasses{
@@ -68,6 +72,7 @@ public:
     typename set<T*>::iterator end();
     const typename set<T*>::iterator begin() const;
     const typename set<T*>::iterator end() const;
+    set<faction*>::iterator findF(QString name) const;
     typename set<T*>::iterator find(QString name) const;
     pair<typename set<T*>::iterator,bool> add(T*& input);
     pair<T*,bool> pop(T* f);
@@ -153,6 +158,7 @@ struct result {
 
 
 class faction : public ContainerObject {
+        Q_OBJECT
 public:
     using ContainerObject::ContainerObject;
     set<sysStat*, defaultPointerCmp<sysStat>> homes;
@@ -179,6 +185,7 @@ public:
 };
 
 class GlobalFactions : public AdvancedContainer<faction> {
+    Q_OBJECT
 public:
     //using AdvancedContainer::AdvancedContainer;
     GlobalFactions(QString name);
@@ -191,16 +198,25 @@ public:
     unsigned totalKills=0;
     unsigned reCalcTotalKills();
     unsigned reCalcStackHeight();
-    unsigned totalMissionCount=0;
+    unsigned totalMissionCount=0,CompletedMissionCount=0;
     unsigned stackHeight=0;
     unsigned totalKillsSoFar=0;
     unsigned getNumberOfMissions();
     double payout=0;
     double reCalcTotalPayout();
+    unsigned stackWidth() {return container.size();}
+
 
 private slots:
 
     void MissionAdded(mission* m);
+};
+
+class TargetedFaction : public AdvancedContainer<mission> {
+public:
+    using AdvancedContainer::AdvancedContainer;
+    unsigned killsSoFar=0;
+
 };
 
 class huntedSystem : public AdvancedContainer<System> {
@@ -208,6 +224,7 @@ public:
     using AdvancedContainer::AdvancedContainer;
     Statistics getStats(GlobalFactions const & glob);
     faction* findFaction(QString faction);
+    set<TargetedFaction*> TargetedFactions;
 };
 
 class currentStation : public AdvancedContainer<faction> {

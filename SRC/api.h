@@ -1,7 +1,7 @@
 #ifndef API_H
 #define API_H
 
-#include <data.h>
+#include "containerobject.h"
 #include <QObject>
 #include <QFileSystemWatcher>
 #include "json.hpp"
@@ -9,6 +9,8 @@
 #include <QStandardPaths>
 #include <QFile>
 #include <set>
+#include <QFileDialog>
+#include <QTreeWidgetItem>
 
 using json=nlohmann::json;
 using namespace std;
@@ -27,7 +29,7 @@ private slots:
 
 private:
 
-    techlevi::data * Data;
+    //techlevi::data * Data;
 
     bool GettingMissions=false;
 
@@ -41,12 +43,15 @@ private:
 
     void OnEvent(json event);
 
-    void refreshdata(int depth=0, json *SavedData=nullptr, techlevi::Input * input=nullptr);
 public:
 
-    void setData(techlevi::data* input) {Data=input;}
-
     void HandleEvent(json event);
+
+    void SaveData(QString file);
+
+public slots:
+
+
 
 signals:
 
@@ -55,6 +60,10 @@ signals:
     void Signal_Event(json processed);
 
     void addMission(string dest,int kills, double reward, unsigned ID,QString Sfaction, QString Tfaction);
+
+    void requestStatistics(Statistics* input);
+
+    void requestJson(string * input,QTreeWidgetItem* item=nullptr);
 };
 
 #endif // API_H
