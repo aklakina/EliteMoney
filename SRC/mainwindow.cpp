@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->label_9->setText("0");
     ui->label_10->setText("0");
     ui->label_11->setText("0");
+    ui->horizontalSlider->setMaximum(0);
     this->api=new API(this);
     //connect(api,&API::Signal_Event,Data,&techlevi::data::OnEvent);
     this->Data=new techlevi::data(this);
@@ -46,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
     api->LoadData(c);
+    ol=new Overlay(this);
     //on_listWidget_2_itemClicked(c);
 }
 
@@ -140,15 +142,17 @@ void MainWindow::RefreshTree(GlobalFactions const & GlobalFactions) {
             return a->text(0);
         }
     };
-    for (auto i=0;i<ui->treeWidget_3->topLevelItem(0)->childCount();i++) {
-        for (auto k=0;k<ui->treeWidget_3->topLevelItem(0)->child(i)->childCount();k++) {
-            QString stationItem=ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->text(0);
-            for (auto j=0;j<ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->childCount();j++) {
-                auto factionItem=ui->treeWidget_3->topLevelItem(0)->child(i)->child(k)->child(j);
-                for (auto faction:GlobalFactions) {
-                    if (faction->name==GetFactionName(factionItem)) {
-                        factionItem->setText(0,"["+QString::number(faction->totalKillsNeeded)+"] "+faction->name);
-                        break;
+    for (auto toplevel=0;toplevel<ui->treeWidget_3->topLevelItemCount();toplevel++) {
+        for (auto i=0;i<ui->treeWidget_3->topLevelItem(toplevel)->childCount();i++) {
+            for (auto k=0;k<ui->treeWidget_3->topLevelItem(toplevel)->child(i)->childCount();k++) {
+                QString stationItem=ui->treeWidget_3->topLevelItem(toplevel)->child(i)->child(k)->text(0);
+                for (auto j=0;j<ui->treeWidget_3->topLevelItem(toplevel)->child(i)->child(k)->childCount();j++) {
+                    auto factionItem=ui->treeWidget_3->topLevelItem(toplevel)->child(i)->child(k)->child(j);
+                    for (auto faction:GlobalFactions) {
+                        if (faction->name==GetFactionName(factionItem)) {
+                            factionItem->setText(0,"["+QString::number(faction->totalKillsNeeded)+"] "+faction->name);
+                            break;
+                        }
                     }
                 }
             }
@@ -189,13 +193,19 @@ void MainWindow::completedData(GlobalFactions const & data,HuntedSystems const &
 }
 
 void MainWindow::Refresh_UI(bool switcher,GlobalFactions const & data) {
+    auto Stats=new Statistics();
+    Data->getUnifiedStatistics(Stats);
+    ui->horizontalSlider->setMaximum(data.stackHeight);
+    ui->label_8->setText(QString::number(Stats->totalPayout));
+    ui->Curr_payout->setText(QString::number(Stats->currentPayout));
     ui->treeWidget->expandAll();
     ui->label_9->setText(QString::number(data.stackHeight));
     int temp_4=100*data.totalKillsSoFar/data.stackHeight;
     ui->kills_made->setText(QString::number(data.totalKillsSoFar)+" ("+QString::number(temp_4)+"%)");
     ui->kills_left->setText(QString::number(data.stackHeight-data.totalKillsSoFar)+" ("+QString::number(100-temp_4)+"%)");
     if (data.stackHeight!=0) {
-        ui->label_10->setText(QString::number((double)data.totalKills/(double)data.stackHeight, 'f', 10));
+        double res=(double)data.totalKills/(double)data.stackHeight;
+        ui->label_10->setText(QString::number(res, 'f', 10));
         if (switcher) {
             if (ui->label_10->text().toDouble()<2.0f) {
                 ui->label_20->setText("Stop hunting and go back and turn in your missions");
@@ -203,13 +213,14 @@ void MainWindow::Refresh_UI(bool switcher,GlobalFactions const & data) {
                 ui->label_20->setText("You can continue the fun");
             }
         } else {
-            if (ui->label_10->text().toDouble()<3.0) {
+            if (ui->label_10->text().toDouble()<3.0f) {
                 ui->label_20->setText("Pick up some more missions to complete");
             } else {
                 ui->label_20->setText("You can go and kill some pirate scum");
             }
         }
-        ui->label_11->setText((QString::number((ui->label_8->text().toDouble()*1000/data.stackHeight)/1000000, 'f', 10))+"$ M");
+        res=(ui->label_8->text().toDouble()*1000/data.stackHeight)/1000000;
+        ui->label_11->setText((QString::number(res, 'f', 10))+"$ M");
     } else {
         ui->label_10->setText("0");
         ui->label_11->setText("0");
@@ -311,10 +322,10 @@ void MainWindow::on_horizontalSlider_valueChanged(int value)
     int all_missions=0;
     double all_reward=0;
     for (auto faction:Data->getFactions()) {
-        int temp=value;
+        int TheorKilled=value;
         for (auto mission:(faction->missions)) {
-            if (0<=temp-mission->overallKillsNeeded) {
-                temp=temp-mission->overallKillsNeeded;
+            if (TheorKilled>=mission->overallKillsNeeded) {
+                TheorKilled=TheorKilled-mission->overallKillsNeeded;
                 theor_completed++;
                 theor_rew+=mission->payout;
             }
@@ -323,7 +334,8 @@ void MainWindow::on_horizontalSlider_valueChanged(int value)
         }
     }
     ui->Reward->setText(QString::number(theor_rew)+" ("+QString::number(theor_rew*100/all_reward)+"%)");
-    ui->max_theoretycal->setText(QString::number(theor_completed)+" ("+QString::number(theor_completed*100/all_missions)+"%)");
+    auto number=((double)theor_completed/(all_missions==0?1:(double)all_missions))*100;
+    ui->max_theoretycal->setText(QString::number(theor_completed)+" ("+QString::number(number)+"%)");
     ui->horizontalSlider->setToolTip(QString::number(value));
     ui->Theor_num_kill->setText(QString::number(value)+" ("+QString::number(value*100/ui->horizontalSlider->maximum())+"%)");
 }
@@ -342,19 +354,18 @@ void MainWindow::on_Copy_data_clicked()
 void MainWindow::on_pushButton_clicked()
 {
     QString a="====================================\n";
-    auto res=Data->getStatistics();
-    for (auto system:res) {
-        int total_mission_count=system.second.totalNumberOfMissions-system.second.completedMissions;
-        a+="``` " + (system.first)->name + ": Total payout "+QString::number((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number((ui->Missions_completed->text().toInt()+total_mission_count))+" Missions \n";
-        if (ui->Missions_completed->text().toInt()>0)
-            a+="Completed: "+QString::number((ui->Curr_payout->text().toDouble())/1000)+"$ Mill for "+ui->Missions_completed->text()+" Mission(s) \n";
-        if (total_mission_count>0)
-            a+="Active: "+QString::number((ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number(total_mission_count)+" Mission(s) \n";
-        a+="Stack Height: "+QString::number(Data->getStackHeight())+" Stack Width: "+QString::number(Data->getStackWidth())+"\n";
-        a+="Current Ratio: "+ui->label_10->text()+" Mission average payout: "+QString::number(((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)/(double)(ui->Missions_completed->text().toInt()+total_mission_count))+"$ Mill \nReward per kill (Bounty not included): "+QString::number(((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)/(double)Data->getStackHeight())+"$ Mill\n";
-        a+="Mission target system: "+ui->systemName->text()+"\n";
-        a+="LFW to Complete/Turn in```\n";
-    }
+    auto res=new Statistics();
+    Data->getUnifiedStatistics(res);
+    int total_mission_count=res->totalNumberOfMissions-res->completedMissions;
+    a+="```Total payout "+QString::number((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number((ui->Missions_completed->text().toInt()+total_mission_count))+" Missions \n";
+    if (ui->Missions_completed->text().toInt()>0)
+        a+="Completed: "+QString::number((ui->Curr_payout->text().toDouble())/1000)+"$ Mill for "+ui->Missions_completed->text()+" Mission(s) \n";
+    if (total_mission_count>0)
+        a+="Active: "+QString::number((ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number(total_mission_count)+" Mission(s) \n";
+    a+="Stack Height: "+QString::number(Data->getStackHeight())+" Stack Width: "+QString::number(Data->getStackWidth())+"\n";
+    a+="Current Ratio: "+ui->label_10->text()+" Mission average payout: "+QString::number(((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)/(double)(ui->Missions_completed->text().toInt()+total_mission_count))+"$ Mill \nReward per kill (Bounty not included): "+QString::number(((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)/(double)Data->getStackHeight())+"$ Mill\n";
+    a+="Mission target system: "+ui->systemName->text()+"\n";
+    a+="LFW to Complete/Turn in```\n";
     a+="====================================";
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(a);

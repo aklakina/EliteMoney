@@ -8,6 +8,7 @@ Statistics Statistics::operator +=(const Statistics &x) {
     this->totalNumberOfMissions+=x.totalNumberOfMissions;
     this->completedMissions+=x.completedMissions;
     this->totalPayout+=x.totalPayout;
+    this->currentPayout+=x.currentPayout;
     return *this;
 }
 
@@ -177,6 +178,9 @@ pair<set<mission*>::iterator, bool> faction::add(mission *&input)
         this->totalKillsNeeded+=input->overallKillsNeeded;
         this->totalReward+=input->payout;
         this->totalKillsSoFar+=input->killsSoFar;
+        if (input->Completed) {
+            this->currentReward+=input->payout;
+        }
         emit MissionAdded(input);
     }
     return res;
@@ -201,11 +205,12 @@ Statistics huntedSystem::getStats(const GlobalFactions &glob)
     for (auto faction:glob) {
         auto res=findFaction(faction->name);
         if (res!=nullptr) {
-            stats.totalNumberOfMissions=res->missions.size();
-            stats.totalKillsNeeded=res->totalKillsNeeded;
-            stats.totalPayout=res->totalReward;
-            stats.killsSoFar=res->totalKillsSoFar;
-            stats.completedMissions=res->countMissions().second;
+            stats.totalNumberOfMissions+=res->missions.size();
+            stats.totalKillsNeeded+=res->totalKillsNeeded;
+            stats.totalPayout+=res->totalReward;
+            stats.killsSoFar+=res->totalKillsSoFar;
+            stats.completedMissions+=res->countMissions().second;
+            stats.currentPayout+=res->currentReward;
         }
     }
     return stats;
@@ -295,6 +300,7 @@ void GlobalFactions::MissionAdded(mission *m)
     this->payout+=m->payout;
     this->totalKillsSoFar+=m->killsSoFar;
     this->totalMissionCount++;
+    this->currentPayout+=m->Completed? m->payout:0;
     reCalcStackHeight();
 }
 

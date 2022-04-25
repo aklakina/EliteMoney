@@ -13,14 +13,16 @@ SOURCES += \
     containerobject.cpp \
     data.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    overlay.cpp
 
 HEADERS += \
     api.h \
     containerobject.h \
     data.h \
     json.hpp \
-    mainwindow.h
+    mainwindow.h \
+    overlay.h
 
 FORMS += \
     mainwindow.ui

@@ -68,6 +68,8 @@ namespace techlevi {
 
         set<faction*>::iterator FactionsBegin() {return globalFactions->begin();}
 
+        unsigned getMissionNumber() {return globalFactions->totalMissionCount;}
+
     signals:
 
         void Refresh(GlobalFactions const &faction, HuntedSystems const & targetSystem,  bool deleted=false, mission const * m=nullptr);

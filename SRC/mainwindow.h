@@ -8,6 +8,7 @@
 #include "data.h"
 #include <set>
 #include <QObject>
+#include "overlay.h"
 
 using json=nlohmann::json;
 using namespace std;
@@ -59,6 +60,7 @@ private:
     void RebuildTree(huntedSystem *HuntedSystem, currentStation *currStat, set<faction*>::iterator faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
     void resetTreeColor();
     void on_listWidget_2_itemClicked(QString file_1);
+    Overlay *ol;
 
 public:
 

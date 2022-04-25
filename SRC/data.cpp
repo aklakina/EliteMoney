@@ -129,7 +129,9 @@ Result data::parseData(Input input,Result *Prev)
     if (CompleteData==nullptr) {
         CompleteData=new HuntedSystems();
     }
+    bool TSystemNotSame=false;
     if (Prev==nullptr || input.TSystem!=Prev->TSystem->name) {
+        TSystemNotSame=true;
         huntedSystem* Huntedtemp=new huntedSystem(input.TSystem);
         auto HuntedRes=CompleteData->add(Huntedtemp);
         parsedData.TSystem=Huntedtemp;
@@ -138,7 +140,7 @@ Result data::parseData(Input input,Result *Prev)
     }
 #pragma}
 #pragma Check if Targeted faction exists{
-    if (Prev==nullptr || input.TFaction!=Prev->TFaction->name) {
+    if (Prev==nullptr || input.TFaction!=Prev->TFaction->name || TSystemNotSame) {
         TargetedFaction * TFactionTemp=new TargetedFaction(input.TFaction);
         (parsedData.TSystem)->TargetedFactions.insert(TFactionTemp);
         parsedData.TFaction=TFactionTemp;
@@ -146,8 +148,10 @@ Result data::parseData(Input input,Result *Prev)
         parsedData.TFaction=Prev->TFaction;
     }
 #pragma}
+    bool SSystemNotSame=false;
 #pragma check if source system exists and create if not {
-    if (Prev==nullptr || input.SSystem!=Prev->SSystem->name) {
+    if (Prev==nullptr || input.SSystem!=Prev->SSystem->name || TSystemNotSame) {
+        SSystemNotSame=true;
         System *SSysTemp=new System(input.SSystem);
         auto SSysRes=(parsedData.TSystem)->add(SSysTemp);
         parsedData.SSystem=SSysTemp;
@@ -155,8 +159,10 @@ Result data::parseData(Input input,Result *Prev)
         parsedData.SSystem=Prev->SSystem;
     }
 #pragma}
+    bool StationNotSame=false;
 #pragma check if source station exists and create if not {
-    if (Prev==nullptr || input.SStation!=Prev->SStation->name) {
+    if (Prev==nullptr || input.SStation!=Prev->SStation->name || SSystemNotSame) {
+        StationNotSame=true;
         station* SStatTemp=new station(input.SStation);
         auto SStatRes=(parsedData.SSystem)->add(SStatTemp);
         parsedData.SStation=SStatTemp;
@@ -165,23 +171,23 @@ Result data::parseData(Input input,Result *Prev)
     }
 #pragma}
 #pragma check if source faction exists and is in snycron with the globalFactions container and fix if not {
-    if (Prev==nullptr || input.SFaction!=Prev->SFaction->name) {
+    if ( (Prev==nullptr || input.SFaction!=Prev->SFaction->name || StationNotSame) ) {
         faction* SFactionTemp=new faction(input.SFaction);
         if (globalFactions==nullptr) globalFactions=new GlobalFactions("main");
         auto SFactionGlobRes=globalFactions->add(SFactionTemp);
-        auto SFactionGlobTemp=SFactionTemp;
+        if (!SFactionGlobRes.second) {
+            delete SFactionTemp;
+            SFactionTemp=*SFactionGlobRes.first;
+        }
         auto SFactionStatRes=(parsedData.SStation)->add(SFactionTemp);
         if (SFactionGlobRes.second && !SFactionStatRes.second) {
-            //New faction in global container
-            globalFactions->remove(globalFactions->find(SFactionGlobTemp->name));
-            delete SFactionGlobTemp;
-            SFactionTemp=(*SFactionStatRes.first);
+            SFactionTemp=globalFactions->pop(SFactionTemp).first;
+            delete SFactionTemp;
+            SFactionTemp=*SFactionStatRes.first;
+            SFactionGlobRes.first=SFactionStatRes.first;
             globalFactions->add(SFactionTemp);
         }
         if (SFactionStatRes.second) {
-            //New faction in station
-            //If it is new in station it does not matter if it was new in global or not
-            //We have to adjust it's homes container either way
             auto fact=(*SFactionGlobRes.first);
             sysStat *temp2=new sysStat({parsedData.SSystem,parsedData.SStation});
             fact->homes.insert(temp2);
@@ -248,6 +254,7 @@ void data::LoadDataFromJson(json &input)
     globalFactions->reCalcStackHeight();
     globalFactions->reCalcTotalKills();
     globalFactions->reCalcTotalPayout();
+    emit UpdateTree(*globalFactions);
     emit Refresh(*globalFactions,*CompleteData);
     emit RefreshUI(false,*globalFactions);
 }
@@ -345,7 +352,19 @@ void data::refreshdata(int depth,json *SavedData, techlevi::Input * input, techl
             continue;
         }
         if (depth==0) {
-            emit addTreeItem(key);
+            bool found=false;
+            for (auto itemIndex=0;itemIndex<ui->treeWidget_3->topLevelItemCount();itemIndex++) {
+                if (ui->treeWidget_3->topLevelItem(itemIndex)->text(0)==key) {
+                    found=true;
+                    break;
+                }
+            }
+            if (!found) {
+                auto temp=new QTreeWidgetItem();
+                ui->treeWidget_3->addTopLevelItem(temp);
+                temp->setText(0,key);
+                ui->treeWidget_3->setCurrentItem(temp);
+            }
             input->TSystem=key;
         } else {
             emit addTreeItem(key);

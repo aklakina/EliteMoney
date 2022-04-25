@@ -27,7 +27,7 @@ struct defaultPointerCmp {
 };
 struct Statistics {
     unsigned totalKillsNeeded=0,killsSoFar=0,totalNumberOfMissions=0,completedMissions=0;
-    double totalPayout=0;
+    double totalPayout=0,currentPayout=0;
     Statistics operator +=(const Statistics &x);
 };
 #pragma }
@@ -144,7 +144,7 @@ public:
     faction(QString name);
     set<sysStat*, defaultPointerCmp<sysStat>> homes;
     set<mission*, defaultPointerCmp<mission>> missions;
-    double totalReward=0;
+    double totalReward=0, currentReward=0;
     unsigned totalKillsSoFar=0,totalKillsNeeded=0;
     unsigned reCalcStackHeight();
     double reCalcTotalReward();
@@ -181,7 +181,7 @@ public:
     unsigned stackHeight=0;
     unsigned totalKillsSoFar=0;
     unsigned getNumberOfMissions();
-    double payout=0;
+    double payout=0,currentPayout=0;
     double reCalcTotalPayout();
     unsigned stackWidth();
 
@@ -257,14 +257,7 @@ typename set<T*>::iterator AdvancedContainer<T>::find(QString name) const
 template<class T>
 pair<typename set<T*>::iterator, bool> AdvancedContainer<T>::add(T *&input)
 {
-    auto res=container.insert(input);
-    if (!res.second) {
-        res.first=container.find(input);
-        T* temp=input;
-        input=(*res.first);
-        delete temp;
-    }
-    return res;
+    return container.insert(input);
 }
 
 template<class T>
@@ -272,10 +265,10 @@ pair<T *, bool> AdvancedContainer<T>::pop(T *f)
 {
     auto res=container.find(f);
     if (res==container.end()) {
-        return false;
+        return {nullptr,false};
     }
-    container.erase(f);
-    return true;
+    auto output=container.erase(res);
+    return {*output,true};
 }
 
 template<class T>
