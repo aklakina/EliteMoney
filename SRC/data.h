@@ -11,19 +11,28 @@ using namespace std;
 
 namespace techlevi {
 
-    struct Result {
-        set<huntedSystem*>::iterator TSystem;
-        set<System*>::iterator SSystem ;
-        set<faction*>::iterator SFaction;
-        set<station*>::iterator SStation;
-        set<mission*>::iterator Mission;
-    };
 
     struct Input {
         QString TSystem, SSystem, SFaction, SStation, TFaction;
-        unsigned kills,MID,killsSoFar=0;
-        double reward;
+        unsigned kills=0,MID,killsSoFar=0;
+        double reward=0;
         bool completed=false;
+    };
+    struct Result {
+        TargetedFaction* TFaction=nullptr;
+        huntedSystem* TSystem=nullptr;
+        System* SSystem=nullptr;
+        faction* SFaction=nullptr;
+        station* SStation=nullptr;
+        mission* Mission=nullptr;
+        void operator=(Result const & input) {
+            this->TSystem=input.TSystem;
+            this->SStation=input.SStation;
+            this->SSystem=input.SSystem;
+            this->SFaction=input.SFaction;
+            this->Mission=input.Mission;
+            this->TFaction=input.TFaction;
+        }
     };
 
     class data : public QObject
@@ -43,9 +52,9 @@ namespace techlevi {
 
         void addMission(string dest,int kills, double reward, unsigned ID,QString Sfaction, QString Tfaction);
 
-        map<set<huntedSystem*>::iterator,Statistics> getStatistics();
+        map<huntedSystem*,Statistics> getStatistics();
 
-        Result parseData(Input input);
+        Result parseData(Input input, Result *prev=nullptr);
 
         const GlobalFactions& getFactions() {return *globalFactions;}
 
@@ -61,11 +70,11 @@ namespace techlevi {
 
     signals:
 
-        void Refresh(GlobalFactions const &faction, HuntedSystems const & targetSystem, mission const & m, bool deleted=false);
+        void Refresh(GlobalFactions const &faction, HuntedSystems const & targetSystem,  bool deleted=false, mission const * m=nullptr);
 
         void UpdateTree(GlobalFactions const & GlobalFactions);
 
-        void addTreeItem();
+        void addTreeItem(QString name);
 
         void RefreshUI(bool switcher,GlobalFactions const & faction);
 
@@ -75,21 +84,23 @@ namespace techlevi {
 
         API *api;
 
-        GlobalFactions *globalFactions;
+        GlobalFactions *globalFactions=nullptr;
 
-        HuntedSystems *CompleteData;
+        HuntedSystems *CompleteData=nullptr;
 
-        currentStation *CurrentStation;
+        currentStation *CurrentStation=nullptr;
 
         void RecursiveDataReader(QTreeWidgetItem* item, string &a);
 
-        void refreshdata(int depth=0, json *SavedData=nullptr, techlevi::Input * input=nullptr);
+        void refreshdata(int depth=0, json *SavedData=nullptr, techlevi::Input * input=nullptr,techlevi::Result * Prev=nullptr);
 
     public slots:
 
         void getUnifiedStatistics(Statistics* input);
 
         void getJsonFormattedData(string * input,QTreeWidgetItem* item=nullptr);
+
+        void LoadDataFromJson(json & input);
 
     };
 }

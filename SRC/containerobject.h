@@ -6,6 +6,7 @@
 #include <map>
 #include <QString>
 #include <QObject>
+#include <QDebug>
 
 
 using namespace std;
@@ -17,27 +18,17 @@ class station;
 class faction;
 class huntedSystem;
 class mission;
+class TargetedFaction;
 template <class T>
 struct defaultPointerCmp {
-    bool operator ()(T *const &a, T *const &b) const
-    {
+    bool operator ()(T * const &a, T * const &b) const {
         return (*a) < (*b);
-    }
-    bool operator()(const std::_Rb_tree_const_iterator<huntedSystem*> & a, const std::_Rb_tree_const_iterator<huntedSystem*> & b) const {
-        return (*a)<(*b);
     }
 };
 struct Statistics {
     unsigned totalKillsNeeded=0,killsSoFar=0,totalNumberOfMissions=0,completedMissions=0;
     double totalPayout=0;
-    Statistics operator +=(Statistics const & x) {
-        this->completedMissions+=x.completedMissions;
-        this->killsSoFar+=x.killsSoFar;
-        this->totalNumberOfMissions+=x.totalNumberOfMissions;
-        this->completedMissions+=x.completedMissions;
-        this->totalPayout+=x.totalPayout;
-        return *this;
-    }
+    Statistics operator +=(const Statistics &x);
 };
 #pragma }
 
@@ -47,19 +38,19 @@ class ContainerObject : public QObject
     Q_OBJECT
 
 protected:
-    ContainerObject();
 
 public:
     QString name;
-    ContainerObject(QString name1);
-    bool operator <(ContainerObject const &b) const;
-    bool operator >(ContainerObject const &b) const;
-    bool operator ==(ContainerObject const &b) const;
-    bool operator !=(ContainerObject const &b) const;
-    bool operator ==(QString const &b) const;
-    bool operator <(QString const &b) const;
-    bool operator >(QString const &b) const;
-    bool operator !=(QString const &b) const;
+    ContainerObject();
+    explicit ContainerObject(QString name1);
+    bool operator <(const ContainerObject &b) const;
+    bool operator >(const ContainerObject &b) const;
+    bool operator ==(const ContainerObject &b) const;
+    bool operator !=(const ContainerObject &b) const;
+    bool operator ==(const QString &b) const;
+    bool operator <(const QString &b) const;
+    bool operator >(const QString &b) const;
+    bool operator !=(const QString &b) const;
 };
 
 template<class T>
@@ -72,80 +63,70 @@ public:
     typename set<T*>::iterator end();
     const typename set<T*>::iterator begin() const;
     const typename set<T*>::iterator end() const;
-    set<faction*>::iterator findF(QString name) const;
     typename set<T*>::iterator find(QString name) const;
-    pair<typename set<T*>::iterator,bool> add(T*& input);
-    pair<T*,bool> pop(T* f);
-    T* remove(typename set<T*>::iterator f);
-    unsigned getSize();
+    pair<typename set<T*>::iterator,bool> add(T *&input);
+    pair<T*,bool> pop(T *f);
+    T *remove(typename set<T*>::iterator f);
+    unsigned getSize();;
     typename set<T*>::iterator Get(unsigned i);
 };
 
+
 class mission {
 public:
-    QString targetFaction="";
-    set<station*>::iterator sourceStation;
-    set<faction*>::iterator sourceFaction;
-    set<System*>::iterator sourceSystem;
-    set<huntedSystem*>::iterator targetSystem;
+    station* sourceStation;
+    faction* sourceFaction;
+    System* sourceSystem;
+    huntedSystem* targetSystem;
+    TargetedFaction* targetFaction;
     unsigned MID=0;
     int overallKillsNeeded=0, killsSoFar=0;
     double payout=0;
     bool Completed=false;
-    mission(unsigned ID) : MID(ID) {}
+    mission(unsigned ID);
     mission(
             unsigned ID
-            ,set<huntedSystem*>::iterator TSystem
-            ,set<System*>::iterator SSystem
-            ,set<faction*>::iterator SFaction
-            ,set<station*>::iterator SStation
+            ,TargetedFaction* TFaction
+            ,huntedSystem* TSystem
+            ,System* SSystem
+            ,faction* SFaction
+            ,station* SStation
             ,unsigned kills
             ,double reward
             ,bool Redirected=false
             ,unsigned killsSoFarin=0
-        )
-      :
-            sourceStation(SStation)
-            ,sourceFaction(SFaction)
-            ,sourceSystem(SSystem)
-            ,targetSystem(TSystem)
-            ,MID(ID)
-            ,overallKillsNeeded(kills)
-            ,killsSoFar(killsSoFarin)
-            ,payout(reward)
-            ,Completed(Redirected)
-    {}
+            );
 
 #pragma operators{
-    bool operator <(mission const &b) const;
+    bool operator <(const mission &b) const;
 
-    bool operator >(mission const &b) const;
+    bool operator >(const mission &b) const;
 
-    bool operator ==(mission const &b) const;
+    bool operator ==(const mission &b) const;
 
-    bool operator !=(mission const &b) const;
+    bool operator !=(const mission &b) const;
 
-    bool operator ==(unsigned const &ID) const;
+    bool operator ==(const unsigned &ID) const;
 
-    bool operator !=(unsigned const &ID) const;
+    bool operator !=(const unsigned &ID) const;
 
-    bool operator <(unsigned const &ID) const;
+    bool operator <(const unsigned &ID) const;
 
-    bool operator >(unsigned const &ID) const;
+    bool operator >(const unsigned &ID) const;
 #pragma}
 };
 
 class sysStat {
 private:
-    pair<set<System*>::iterator,set<station*>::iterator> a;
+    pair<System*,station*> a;
 public:
-    sysStat(pair<set<System*>::iterator,set<station*>::iterator> in);
-    bool operator <(sysStat const &b) const;
-    bool operator >(sysStat const &b) const;
-    bool operator ==(sysStat const &b) const;
-    bool operator !=(sysStat const &b) const;
-    set<System*>::iterator getSys();
-    set<station*>::iterator getStat();
+    sysStat(pair<System*,station*> in);
+    bool operator <(const sysStat &b) const;
+    bool operator >(const sysStat &b) const;
+    bool operator ==(const sysStat &b) const;
+    bool operator !=(const sysStat &b) const;
+    System* getSys();
+    station* getStat();
 };
 
 struct result {
@@ -158,20 +139,20 @@ struct result {
 
 
 class faction : public ContainerObject {
-        Q_OBJECT
+    Q_OBJECT
 public:
-    using ContainerObject::ContainerObject;
+    faction(QString name);
     set<sysStat*, defaultPointerCmp<sysStat>> homes;
     set<mission*, defaultPointerCmp<mission>> missions;
     double totalReward=0;
     unsigned totalKillsSoFar=0,totalKillsNeeded=0;
     unsigned reCalcStackHeight();
     double reCalcTotalReward();
-    pair<set<mission*>::iterator,bool> add(mission*& input);
+    pair<set<mission*>::iterator,bool> add(mission *&input);
     pair<unsigned,unsigned> countMissions();
 signals:
 
-    void MissionAdded(mission* m);
+    void MissionAdded(mission *m);
 };
 
 class station : public AdvancedContainer<faction> {
@@ -189,11 +170,9 @@ class GlobalFactions : public AdvancedContainer<faction> {
 public:
     //using AdvancedContainer::AdvancedContainer;
     GlobalFactions(QString name);
-    unsigned GetSize();
     bool Add(faction *f);
-    faction* Get(unsigned i);
-    bool remove(faction *f);
-    unsigned getSize();
+    faction *Get(unsigned i);
+    //bool remove(faction *f);
     result findMission(unsigned ID);
     unsigned totalKills=0;
     unsigned reCalcTotalKills();
@@ -204,12 +183,12 @@ public:
     unsigned getNumberOfMissions();
     double payout=0;
     double reCalcTotalPayout();
-    unsigned stackWidth() {return container.size();}
+    unsigned stackWidth();
 
 
 private slots:
 
-    void MissionAdded(mission* m);
+    void MissionAdded(mission *m);
 };
 
 class TargetedFaction : public AdvancedContainer<mission> {
@@ -222,8 +201,8 @@ public:
 class huntedSystem : public AdvancedContainer<System> {
 public:
     using AdvancedContainer::AdvancedContainer;
-    Statistics getStats(GlobalFactions const & glob);
-    faction* findFaction(QString faction);
+    Statistics getStats(const GlobalFactions &glob);
+    faction *findFaction(QString faction);
     set<TargetedFaction*> TargetedFactions;
 };
 
@@ -239,6 +218,88 @@ public:
 };
 #pragma }
 
+#pragma Template class definitions {
+
+
+template<class T>
+typename set<T*>::iterator AdvancedContainer<T>::begin()
+{
+    return  container.begin();
+}
+
+template<class T>
+typename set<T*>::iterator AdvancedContainer<T>::end()
+{
+    return  container.end();
+}
+
+template<class T>
+const typename set<T*>::iterator AdvancedContainer<T>::begin() const
+{
+    return  container.begin();
+}
+
+template<class T>
+const typename set<T*>::iterator AdvancedContainer<T>::end() const
+{
+    return  container.end();
+}
+
+template<class T>
+typename set<T*>::iterator AdvancedContainer<T>::find(QString name) const
+{
+    auto temp=new T(name);
+    auto res=container.find(temp);
+    delete temp;
+    return res;
+}
+
+template<class T>
+pair<typename set<T*>::iterator, bool> AdvancedContainer<T>::add(T *&input)
+{
+    auto res=container.insert(input);
+    if (!res.second) {
+        res.first=container.find(input);
+        T* temp=input;
+        input=(*res.first);
+        delete temp;
+    }
+    return res;
+}
+
+template<class T>
+pair<T *, bool> AdvancedContainer<T>::pop(T *f)
+{
+    auto res=container.find(f);
+    if (res==container.end()) {
+        return false;
+    }
+    container.erase(f);
+    return true;
+}
+
+template<class T>
+T *AdvancedContainer<T>::remove(typename set<T*>::iterator f)
+{
+    auto res=*f;
+    container.erase(f);
+    return res;
+}
+
+template<class T>
+unsigned AdvancedContainer<T>::getSize() {return container.size();}
+
+template<class T>
+typename set<T*>::iterator AdvancedContainer<T>::Get(unsigned i)
+{
+    typename set<T*>::iterator it=this->container.begin();
+    for (unsigned j=0; j<i; j++) {
+        it++;
+    }
+    return it;
+}
+
+#pragma}
 
 
 #endif // CONTAINEROBJECT_H

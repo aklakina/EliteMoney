@@ -26,21 +26,27 @@ MainWindow::MainWindow(QWidget *parent)
     connect(Data,&techlevi::data::Refresh,this,&MainWindow::completedData);
     connect(Data,&techlevi::data::UpdateTree,this,&MainWindow::RefreshTree);
     connect(Data,&techlevi::data::RefreshUI,this,&MainWindow::Refresh_UI);
+    connect(Data,&techlevi::data::addTreeItem,this,&MainWindow::addTreeItem, Qt::DirectConnection);
     connect(api,&API::requestStatistics,Data,&techlevi::data::getUnifiedStatistics, Qt::DirectConnection);
     connect(api, &API::requestJson, Data, &techlevi::data::getJsonFormattedData, Qt::DirectConnection);
+    connect(api, &API::provideJson, Data, &techlevi::data::LoadDataFromJson);
     //current_station=json::parse("{ \"timestamp\":\"2021-02-14T23:26:06Z\", \"event\":\"Docked\", \"StationName\":\"Sabine Camp\", \"StationType\":\"Outpost\", \"StarSystem\":\"Cuberara\", \"SystemAddress\":2869440554457, \"MarketID\":3225893888, \"StationFaction\":{ \"Name\":\"Albardhas for Equality\", \"FactionState\":\"Election\" }, \"StationGovernment\":\"$government_Democracy;\", \"StationGovernment_Localised\":\"Democracy\", \"StationServices\":[ \"dock\", \"autodock\", \"blackmarket\", \"commodities\", \"contacts\", \"exploration\", \"missions\", \"refuel\", \"repair\", \"tuning\", \"engineer\", \"missionsgenerated\", \"flightcontroller\", \"stationoperations\", \"powerplay\", \"searchrescue\", \"stationMenu\" ], \"StationEconomy\":\"$economy_Extraction;\", \"StationEconomy_Localised\":\"Extraction\", \"StationEconomies\":[ { \"Name\":\"$economy_Extraction;\", \"Name_Localised\":\"Extraction\", \"Proportion\":0.830000 }, { \"Name\":\"$economy_Refinery;\", \"Name_Localised\":\"Refinery\", \"Proportion\":0.170000 } ], \"DistFromStarLS\":5.187345 }");
     ui->kills_left->setText("0 (100%)");
     ui->kills_made->setText("0 (0%)");
     QDir saves(QDir::currentPath()+"/System/");
+    if (!saves.exists()) {
+        QDir().mkdir(saves.path());
+    }
     QDateTime a=saves.entryInfoList().begin()->lastModified();
     QString c=saves.entryInfoList().begin()->canonicalFilePath();
-    for (auto i:saves.entryInfoList()) {
+    for (auto const & i:saves.entryInfoList()) {
         if (a<i.lastModified()) {
             a=i.lastModified();
             c=i.canonicalFilePath();
         }
     }
-    on_listWidget_2_itemClicked(c);
+    api->LoadData(c);
+    //on_listWidget_2_itemClicked(c);
 }
 
 void MainWindow::resetTreeColor() {
@@ -84,20 +90,16 @@ void MainWindow::RebuildTree(huntedSystem *HuntedSystem, currentStation *currSta
             }
         }
         if (!found) {
-            addTreeItem();
-            TreeItem->child(ui->treeWidget_3->topLevelItem(0)->childCount()-1)->setText(0,(*currStat->System)->name);
-            ui->treeWidget_3->setCurrentItem(TreeItem->child(TreeItem->childCount()-1));
+            addTreeItem((*currStat->System)->name);
             RebuildTree(HuntedSystem,currStat,faction,ui->treeWidget_3->topLevelItem(0)->child(ui->treeWidget_3->topLevelItem(0)->childCount()-1),true,1);
         }
     } else if (do_not_search && depth==1) {
         ui->treeWidget_3->setCurrentItem(item);
-        addTreeItem();
-        item->child(item->childCount()-1)->setText(0,currStat->name);
+        addTreeItem(currStat->name);
         RebuildTree(HuntedSystem,currStat,faction,item->child(item->childCount()-1),true,2);
     } else if (do_not_search && depth==2) {
         ui->treeWidget_3->setCurrentItem(item);
-        addTreeItem();
-        item->child(item->childCount()-1)->setText(0,"[0] "+(*faction)->name);
+        addTreeItem("[0] "+(*faction)->name);
     } else if (!do_not_search && depth==1) {
         bool found=false;
         for (auto i=0;i<item->childCount();i++) {
@@ -159,7 +161,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::completedData(GlobalFactions const & data,HuntedSystems const & CompleteData, mission const & m,bool deleted) {
+void MainWindow::completedData(GlobalFactions const & data,HuntedSystems const & CompleteData, bool deleted, mission const * m) {
     ui->Curr_payout->setText("0");
     for (auto huntedSystem:CompleteData) {
         for (auto system:*huntedSystem) {
@@ -168,8 +170,8 @@ void MainWindow::completedData(GlobalFactions const & data,HuntedSystems const &
                 temp->setText(0,system->name+"::"+station->name);
                 for (auto factionPlace:data) {
                     faction* faction=(factionPlace);
-                    for (auto mission:factionPlace->missions) {
-                        if ((*mission->sourceStation)->name==station->name && mission->Completed) {
+                    for (auto mission:(factionPlace->missions)) {
+                        if ((mission->sourceStation)->name==station->name && mission->Completed) {
                             QTreeWidgetItem * temp_1=new QTreeWidgetItem();
                             temp_1->setText(0,faction->name+"::     "+QString::number(mission->payout)+"$ K");
                             temp->addChild(temp_1);
@@ -182,7 +184,7 @@ void MainWindow::completedData(GlobalFactions const & data,HuntedSystems const &
     }
     Refresh_UI(true,data);
     if (deleted) {
-        ui->label_8->setText(QString::number(ui->label_8->text().toDouble()-m.payout));
+        ui->label_8->setText(QString::number(ui->label_8->text().toDouble()-m->payout));
     }
 }
 
@@ -216,20 +218,20 @@ void MainWindow::Refresh_UI(bool switcher,GlobalFactions const & data) {
     ui->treeWidget->clear();
 }
 
-void MainWindow::addTreeItem()
+void MainWindow::addTreeItem(QString name)
 {
     if (ui->treeWidget_3->currentItem()==nullptr) {
         QTreeWidgetItem *temp=new QTreeWidgetItem();
-        temp->setText(0,"system1");
-        temp->setFlags(Qt::ItemIsEditable|Qt::ItemIsEnabled);
+        temp->setText(0,name);
+        temp->setFlags(Qt::ItemIsEnabled);
         ui->treeWidget_3->addTopLevelItem(temp);
         ui->treeWidget_3->setCurrentItem(temp);
-        first=temp;
     } else {
         QTreeWidgetItem *temp=new QTreeWidgetItem();
-        temp->setText(0,"subsection1");
-        temp->setFlags(Qt::ItemIsEditable|Qt::ItemIsEnabled);
+        temp->setText(0,name);
+        temp->setFlags(Qt::ItemIsEnabled);
         ui->treeWidget_3->currentItem()->addChild(temp);
+        ui->treeWidget_3->setCurrentItem(temp);
     }
 }
 
@@ -276,7 +278,7 @@ void MainWindow::on_actionLoad_session_triggered()
     on_actionStart_new_session_triggered();
     QString fileName = QFileDialog::getOpenFileName(this,
         tr("Select file to Load"), "./System", tr("Save Files (*.json)"));
-    on_listWidget_2_itemClicked(fileName);
+    api->LoadData(fileName);
 }
 
 void MainWindow::on_actionStart_new_session_triggered()
@@ -310,7 +312,7 @@ void MainWindow::on_horizontalSlider_valueChanged(int value)
     double all_reward=0;
     for (auto faction:Data->getFactions()) {
         int temp=value;
-        for (auto mission:faction->missions) {
+        for (auto mission:(faction->missions)) {
             if (0<=temp-mission->overallKillsNeeded) {
                 temp=temp-mission->overallKillsNeeded;
                 theor_completed++;
@@ -343,7 +345,7 @@ void MainWindow::on_pushButton_clicked()
     auto res=Data->getStatistics();
     for (auto system:res) {
         int total_mission_count=system.second.totalNumberOfMissions-system.second.completedMissions;
-        a+="``` " + (*system.first)->name + ": Total payout "+QString::number((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number((ui->Missions_completed->text().toInt()+total_mission_count))+" Missions \n";
+        a+="``` " + (system.first)->name + ": Total payout "+QString::number((ui->Curr_payout->text().toDouble()+ui->label_8->text().toDouble())/1000)+"$ Mill for "+QString::number((ui->Missions_completed->text().toInt()+total_mission_count))+" Missions \n";
         if (ui->Missions_completed->text().toInt()>0)
             a+="Completed: "+QString::number((ui->Curr_payout->text().toDouble())/1000)+"$ Mill for "+ui->Missions_completed->text()+" Mission(s) \n";
         if (total_mission_count>0)
