@@ -152,3 +152,13 @@ void API::SaveData(QString file)
     }
 }
 
+void API::LoadData(QString filePath)
+{
+        QFile f(filePath);
+        if (f.open(QIODevice::ReadOnly)) {
+            QTextStream stream(&f);
+            json config= json::parse(stream.readAll().toStdString());
+            emit provideJson(config);
+        }
+}
+

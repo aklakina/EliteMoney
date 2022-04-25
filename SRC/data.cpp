@@ -12,7 +12,7 @@ void data::Init(Ui::MainWindow *Mui, API *parent_api) {
 
 void data::KillsperFaction() {
     ui->tableWidget->clear();
-    ui->tableWidget->setRowCount(globalFactions->GetSize());
+    ui->tableWidget->setRowCount(globalFactions->getSize());
     int curr_row=0;
     int curr_col=0;
     vector<int> frags;
@@ -30,7 +30,7 @@ void data::KillsperFaction() {
         QTableWidgetItem* temp=new QTableWidgetItem(faction->name);
         int frags_needed=0;
         curr_col=0;
-        for (auto Mission:faction->missions) {
+        for (auto Mission:(faction->missions)) {
             if (!Mission->Completed) {
                 int kills_needed=0;
                 if (curr_col>0) {
@@ -78,14 +78,14 @@ void data::missionCompleted(unsigned ID,bool remove) {
         globalFactions->totalMissionCount-=1;
         auto oldStackHeight=globalFactions->stackHeight;
         globalFactions->totalKillsSoFar-=oldStackHeight-globalFactions->reCalcStackHeight();
-        emit Refresh(*globalFactions,*CompleteData,*mission);
+        emit Refresh(*globalFactions,*CompleteData);
         KillsperFaction();
         emit UpdateTree(*globalFactions);
         ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()+1));
     } else {
         ui->treeWidget->clear();
         RemoveMission(&ID);
-        emit Refresh(*globalFactions,*CompleteData,(*mission),true);
+        emit Refresh(*globalFactions,*CompleteData,true,mission);
         KillsperFaction();
         ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()-1));
     }
@@ -95,14 +95,13 @@ void data::RemoveMission(unsigned *ID) {
     auto res=globalFactions->findMission(*ID);
     (*res.factionPlace)->missions.erase(res.missionPlace);
     if ((*res.factionPlace)->missions.empty()) {
-        globalFactions->remove((*res.factionPlace));
+        globalFactions->remove(res.factionPlace);
     }
 }
 
 void data::addMission(string dest,int kills, double reward, unsigned ID,QString Sfaction, QString Tfaction) {
     if (ui->systemName->text()=="System") {
-        emit addTreeItem();
-        ui->treeWidget_3->topLevelItem(0)->setText(0,QString::fromStdString(dest));
+        emit addTreeItem(QString::fromStdString(dest));
         ui->systemName->setText(QString::fromStdString(dest));
     }
     ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->topLevelItem(0));
@@ -123,54 +122,79 @@ void data::addMission(string dest,int kills, double reward, unsigned ID,QString 
     emit RefreshUI(false,*globalFactions);
 }
 
-Result data::parseData(Input input)
+Result data::parseData(Input input,Result *Prev)
 {
     Result parsedData;
 #pragma check if TargetSystem exists{
     if (CompleteData==nullptr) {
         CompleteData=new HuntedSystems();
     }
-    huntedSystem* Huntedtemp=new huntedSystem(input.TSystem);
-    auto HuntedRes=CompleteData->add(Huntedtemp);
-    parsedData.TSystem=HuntedRes.first;
-    TargetedFaction * TFactionTemp=new TargetedFaction(input.TFaction);
-    (*parsedData.TSystem)->TargetedFactions.insert(TFactionTemp);
+    if (Prev==nullptr || input.TSystem!=Prev->TSystem->name) {
+        huntedSystem* Huntedtemp=new huntedSystem(input.TSystem);
+        auto HuntedRes=CompleteData->add(Huntedtemp);
+        parsedData.TSystem=Huntedtemp;
+    } else {
+        parsedData.TSystem=Prev->TSystem;
+    }
+#pragma}
+#pragma Check if Targeted faction exists{
+    if (Prev==nullptr || input.TFaction!=Prev->TFaction->name) {
+        TargetedFaction * TFactionTemp=new TargetedFaction(input.TFaction);
+        (parsedData.TSystem)->TargetedFactions.insert(TFactionTemp);
+        parsedData.TFaction=TFactionTemp;
+    } else {
+        parsedData.TFaction=Prev->TFaction;
+    }
 #pragma}
 #pragma check if source system exists and create if not {
-    System *SSysTemp=new System(input.SSystem);
-    auto SSysRes=(*parsedData.TSystem)->add(SSysTemp);
-    parsedData.SSystem=SSysRes.first;
+    if (Prev==nullptr || input.SSystem!=Prev->SSystem->name) {
+        System *SSysTemp=new System(input.SSystem);
+        auto SSysRes=(parsedData.TSystem)->add(SSysTemp);
+        parsedData.SSystem=SSysTemp;
+    } else {
+        parsedData.SSystem=Prev->SSystem;
+    }
 #pragma}
 #pragma check if source station exists and create if not {
-    station* SStatTemp=new station(input.SStation);
-    auto SStatRes=(*parsedData.SSystem)->add(SStatTemp);
-    parsedData.SStation=SStatRes.first;
+    if (Prev==nullptr || input.SStation!=Prev->SStation->name) {
+        station* SStatTemp=new station(input.SStation);
+        auto SStatRes=(parsedData.SSystem)->add(SStatTemp);
+        parsedData.SStation=SStatTemp;
+    } else {
+        parsedData.SStation=Prev->SStation;
+    }
 #pragma}
 #pragma check if source faction exists and is in snycron with the globalFactions container and fix if not {
-    faction* SFactionTemp=new faction(input.SFaction);
-    auto SFactionGlobRes=globalFactions->add(SFactionTemp);
-    auto SFactionGlobTemp=SFactionTemp;
-    auto SFactionStatRes=(*parsedData.SStation)->add(SFactionTemp);
-    if (SFactionGlobRes.second && !SFactionStatRes.second) {
-        //New faction in global container
-        globalFactions->remove(SFactionGlobTemp);
-        delete SFactionGlobTemp;
-        SFactionTemp=(*SFactionStatRes.first);
-        globalFactions->add(SFactionTemp);
+    if (Prev==nullptr || input.SFaction!=Prev->SFaction->name) {
+        faction* SFactionTemp=new faction(input.SFaction);
+        if (globalFactions==nullptr) globalFactions=new GlobalFactions("main");
+        auto SFactionGlobRes=globalFactions->add(SFactionTemp);
+        auto SFactionGlobTemp=SFactionTemp;
+        auto SFactionStatRes=(parsedData.SStation)->add(SFactionTemp);
+        if (SFactionGlobRes.second && !SFactionStatRes.second) {
+            //New faction in global container
+            globalFactions->remove(globalFactions->find(SFactionGlobTemp->name));
+            delete SFactionGlobTemp;
+            SFactionTemp=(*SFactionStatRes.first);
+            globalFactions->add(SFactionTemp);
+        }
+        if (SFactionStatRes.second) {
+            //New faction in station
+            //If it is new in station it does not matter if it was new in global or not
+            //We have to adjust it's homes container either way
+            auto fact=(*SFactionGlobRes.first);
+            sysStat *temp2=new sysStat({parsedData.SSystem,parsedData.SStation});
+            fact->homes.insert(temp2);
+        }
+        parsedData.SFaction=SFactionTemp;
+    } else {
+        parsedData.SFaction=Prev->SFaction;
     }
-    if (SFactionStatRes.second) {
-        //New faction in station
-        //If it is new in station it does not matter if it was new in global or not
-        //We have to adjust it's homes container either way
-        auto fact=(*SFactionGlobRes.first);
-        sysStat *temp2=new sysStat({parsedData.SSystem,parsedData.SStation});
-        fact->homes.insert(temp2);
-    }
-    parsedData.SFaction=SFactionStatRes.first;
 #pragma}
 #pragma check if mission already exists and create if not {
     auto Mission=new class mission(
                 input.MID
+                ,parsedData.TFaction
                 ,parsedData.TSystem
                 ,parsedData.SSystem
                 ,parsedData.SFaction
@@ -180,32 +204,16 @@ Result data::parseData(Input input)
                 ,input.completed
                 ,input.killsSoFar
                 );
-    auto MissionRes=(*parsedData.SFaction)->add(Mission);
-    if (MissionRes.second) {
-#pragma Refresh UI with new data{
-        unsigned max=globalFactions->stackHeight;
-        unsigned total_kills=globalFactions->reCalcTotalKills();
-        unsigned total_kills_so_far=globalFactions->totalKillsSoFar;
-        double rew=globalFactions->payout;
-        ui->label_8->setText(QString::number(ui->label_8->text().toDouble()+rew));
-        ui->horizontalSlider->setMaximum(max);
-        ui->label_9->setText(QString::number(max));
-        ui->label_10->setText(QString::number(total_kills/max, 'f', 10));
-        ui->label_11->setText(QString::number((ui->label_8->text().toDouble()*1000/max)/1000000, 'f', 10)+"$ M");
-        int temp_4=100*total_kills_so_far/max;
-        ui->kills_made->setText(QString::number(total_kills_so_far)+" ("+QString::number(temp_4)+"%)");
-        ui->kills_left->setText(QString::number(max-total_kills_so_far)+" ("+QString::number(100-temp_4)+"%)");
-#pragma}
-    }
-    parsedData.Mission=MissionRes.first;
+    auto MissionRes=(parsedData.SFaction)->add(Mission);
+    parsedData.Mission=Mission;
     return parsedData;
 #pragma}
 }
 
-map<set<huntedSystem*>::iterator,Statistics> data::getStatistics() {
-    map<set<huntedSystem*>::iterator,Statistics> output;
-    for (auto hunted=CompleteData->begin();hunted!=CompleteData->end();hunted++) {
-        output.insert({hunted,(*hunted)->getStats(*globalFactions)});
+map<huntedSystem*,Statistics> data::getStatistics() {
+    map<huntedSystem*,Statistics> output;
+    for (auto hunted:*CompleteData) {
+        output.insert({hunted,(hunted)->getStats(*globalFactions)});
     }
     return output;
 }
@@ -229,6 +237,19 @@ void data::getJsonFormattedData(string* input,QTreeWidgetItem* item) {
     b+="}";
     b.remove("\\");
     *input=b.toStdString();
+}
+
+void data::LoadDataFromJson(json &input)
+{
+    auto temp=new json(input);
+    refreshdata(0,temp);
+    delete temp;
+    KillsperFaction();
+    globalFactions->reCalcStackHeight();
+    globalFactions->reCalcTotalKills();
+    globalFactions->reCalcTotalPayout();
+    emit Refresh(*globalFactions,*CompleteData);
+    emit RefreshUI(false,*globalFactions);
 }
 
 void data::RecursiveDataReader(QTreeWidgetItem *item, string &a) {
@@ -265,8 +286,8 @@ void data::RecursiveDataReader(QTreeWidgetItem *item, string &a) {
                         "0;0\"";
             } else {
                 set<mission*> CollectedMissions;
-                for (auto mission:(*faction)->missions) {
-                    if ((*mission->sourceStation)->name==item->text(0)) {
+                for (auto mission:((*faction)->missions)) {
+                    if ((mission->sourceStation)->name==item->text(0)) {
                         CollectedMissions.insert(mission);
                     }
                 }
@@ -286,7 +307,7 @@ void data::RecursiveDataReader(QTreeWidgetItem *item, string &a) {
                             +";"+
                             QString::number(tempor).toStdString()
                             +";"+
-                            mission->targetFaction.toStdString()
+                            mission->targetFaction->name.toStdString()
                             +"\"";
                     if (mission!=(*(--CollectedMissions.end()))) {
                         a+=",";
@@ -302,7 +323,7 @@ void data::RecursiveDataReader(QTreeWidgetItem *item, string &a) {
     a+="}";
 }
 
-void data::refreshdata(int depth,json *SavedData, techlevi::Input * input) {
+void data::refreshdata(int depth,json *SavedData, techlevi::Input * input, techlevi::Result * Prev) {
     if (SavedData==nullptr) {
         try {
             string* temp=new string();
@@ -317,7 +338,6 @@ void data::refreshdata(int depth,json *SavedData, techlevi::Input * input) {
     if (input==nullptr)
         input=new techlevi::Input();
     QString key;
-    QString alma;
     json ChildObject;
     for (auto i=SavedData->begin();i!=SavedData->end();i++) {
         key=QString::fromStdString((string)i.key());
@@ -325,13 +345,10 @@ void data::refreshdata(int depth,json *SavedData, techlevi::Input * input) {
             continue;
         }
         if (depth==0) {
-            addTreeItem();
-            ui->treeWidget_3->currentItem()->setText(0,key);
+            emit addTreeItem(key);
             input->TSystem=key;
         } else {
-            addTreeItem();
-            ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->currentItem()->child(ui->treeWidget_3->currentItem()->childCount()-1));
-            ui->treeWidget_3->currentItem()->setText(0,key);
+            emit addTreeItem(key);
             if (depth==2) {
                 input->SStation=key;
             } else if (depth==1) {
@@ -348,6 +365,7 @@ void data::refreshdata(int depth,json *SavedData, techlevi::Input * input) {
             } else {
                 input->SFaction=QString::fromStdString((string)i.key());
             }
+
             for (auto k=ChildObject.begin();k!=ChildObject.end();k++) {
                 QString miss=QString::fromStdString((string)k.value());
                 if (miss.section(";",3,3)=="0") {
@@ -362,11 +380,21 @@ void data::refreshdata(int depth,json *SavedData, techlevi::Input * input) {
                 input->killsSoFar=miss.section(";",1,1).toInt();
                 input->reward=miss.section(";",2,2).toDouble();
                 input->TFaction=miss.section(";",4,4);
-                parseData(*input);
+                if (Prev==nullptr) {
+                    Prev=new techlevi::Result();
+                    *Prev=parseData(*input);
+                } else {
+                    *Prev=parseData(*input,Prev);
+                }
             }
         }
         ui->treeWidget_3->setCurrentItem(ui->treeWidget_3->currentItem()->parent());
     }
     ui->treeWidget_3->expandAll();
-    if (depth==0) delete SavedData;
+    if (depth==0) {
+        delete input;
+        if (Prev!=nullptr) {
+            delete Prev;
+        }
+    }
 }

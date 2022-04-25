@@ -26,7 +26,7 @@ public:
 
 private slots:
 
-    void addTreeItem();
+    void addTreeItem(QString name);
 
     void on_treeWidget_3_itemClicked(QTreeWidgetItem *item, int column);
 
@@ -42,7 +42,7 @@ private slots:
 
     void on_pushButton_clicked();
 
-    void completedData(GlobalFactions const & data, HuntedSystems const & CompletedData, mission const & m,bool deleted=false);
+    void completedData(GlobalFactions const & data, HuntedSystems const & CompleteData, bool deleted=false, mission const * m=nullptr);
 
     void RefreshTree(GlobalFactions const & GlobalFactions);
 
@@ -54,7 +54,6 @@ private:
     API* api;
     techlevi::data* Data;
     int selecteditem=0;
-    QTreeWidgetItem *first=nullptr;
     json config;
     void firsttreefiller();
     void RebuildTree(huntedSystem *HuntedSystem, currentStation *currStat, set<faction*>::iterator faction,QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);

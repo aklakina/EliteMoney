@@ -49,6 +49,8 @@ public:
 
     void SaveData(QString file);
 
+    void LoadData(QString filePath);
+
 public slots:
 
 
@@ -64,6 +66,8 @@ signals:
     void requestStatistics(Statistics* input);
 
     void requestJson(string * input,QTreeWidgetItem* item=nullptr);
+
+    void provideJson(json & input);
 };
 
 #endif // API_H
