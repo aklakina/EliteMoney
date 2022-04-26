@@ -7,11 +7,11 @@
 #include <QString>
 #include <QObject>
 #include <QDebug>
-
+#include <QDateTime>
 
 using namespace std;
 #pragma }
-
+namespace techlevi {
 #pragma PreDefinitions{
 class System;
 class station;
@@ -25,11 +25,29 @@ struct defaultPointerCmp {
         return (*a) < (*b);
     }
 };
+
 struct Statistics {
-    unsigned totalKillsNeeded=0,killsSoFar=0,totalNumberOfMissions=0,completedMissions=0;
+    unsigned totalKillsNeeded=0,killsSoFar=0
+            ,totalNumberOfMissions=0,completedMissions=0
+            ,StackHeight=0,StackWidth=0;
     double totalPayout=0,currentPayout=0;
     Statistics operator +=(const Statistics &x);
 };
+struct TheoreticalResults {
+    unsigned allMissions=0,TheoreticallyCompletedMissions=0;
+    double totalPossiblePayout=0,TheoreticallyGainedPayout=0;
+    double getPayoutPercentage() {
+        return TheoreticallyGainedPayout*100/totalPossiblePayout;
+    }
+    double getMissionPercentage() {
+        return ((double)TheoreticallyCompletedMissions/(allMissions==0?1:(double)allMissions))*100;
+    }
+};
+struct SystemStation {
+    set<System*>::iterator systemPlace;
+    set<station*>::iterator stationPlace;
+};
+
 #pragma }
 
 #pragma BaseClasses{
@@ -83,6 +101,7 @@ public:
     int overallKillsNeeded=0, killsSoFar=0;
     double payout=0;
     bool Completed=false;
+    QDateTime AcceptanceTime,Expiry;
     mission(unsigned ID);
     mission(
             unsigned ID
@@ -93,6 +112,8 @@ public:
             ,station* SStation
             ,unsigned kills
             ,double reward
+            ,QDateTime AT
+            ,QDateTime Exp
             ,bool Redirected=false
             ,unsigned killsSoFarin=0
             );
@@ -114,6 +135,12 @@ public:
 
     bool operator >(const unsigned &ID) const;
 #pragma}
+};
+
+struct DateComperator {
+    bool operator()(mission * const & a, mission * const & b) const {
+        return a->AcceptanceTime<b->AcceptanceTime;
+    }
 };
 
 class sysStat {
@@ -140,16 +167,24 @@ struct result {
 
 class faction : public ContainerObject {
     Q_OBJECT
+private:
+    set<sysStat*, defaultPointerCmp<sysStat>> homes;
+    set<mission*, defaultPointerCmp<mission>> missionsbyID;
+    set<mission*, DateComperator> missionsbyDate;
 public:
     faction(QString name);
-    set<sysStat*, defaultPointerCmp<sysStat>> homes;
-    set<mission*, defaultPointerCmp<mission>> missions;
     double totalReward=0, currentReward=0;
     unsigned totalKillsSoFar=0,totalKillsNeeded=0;
     unsigned reCalcStackHeight();
     double reCalcTotalReward();
-    pair<set<mission*>::iterator,bool> add(mission *&input);
+    pair<mission*,bool> add(mission *&input);
     pair<unsigned,unsigned> countMissions();
+    const set<mission*, defaultPointerCmp<mission>> &getMissionsbyID() const {return missionsbyID;}
+    const set<mission*, DateComperator> &getMissionsbyDate() const {return missionsbyDate;}
+    const set<sysStat*, defaultPointerCmp<sysStat>> &getHomes() const {return homes;}
+    void InsertHome(sysStat * input) {homes.insert(input);}
+    void removeMission(mission* toRemove);
+    bool hasMissions() {return missionsbyID.size()>0?true:false;}
 signals:
 
     void MissionAdded(mission *m);
@@ -168,11 +203,9 @@ public:
 class GlobalFactions : public AdvancedContainer<faction> {
     Q_OBJECT
 public:
-    //using AdvancedContainer::AdvancedContainer;
     GlobalFactions(QString name);
     bool Add(faction *f);
     faction *Get(unsigned i);
-    //bool remove(faction *f);
     result findMission(unsigned ID);
     unsigned totalKills=0;
     unsigned reCalcTotalKills();
@@ -183,8 +216,8 @@ public:
     unsigned getNumberOfMissions();
     double payout=0,currentPayout=0;
     double reCalcTotalPayout();
-    unsigned stackWidth();
-
+    unsigned stackWidth() const;
+    void RefreshStatistics();
 
 private slots:
 
@@ -206,10 +239,10 @@ public:
     set<TargetedFaction*> TargetedFactions;
 };
 
-class currentStation : public AdvancedContainer<faction> {
+class currentStation : public ContainerObject {
 public:
-    using AdvancedContainer::AdvancedContainer;
-    set<System*>::iterator System;
+    using ContainerObject::ContainerObject;
+    QString systemName;
 };
 
 class HuntedSystems : public AdvancedContainer<huntedSystem> {
@@ -293,6 +326,8 @@ typename set<T*>::iterator AdvancedContainer<T>::Get(unsigned i)
 }
 
 #pragma}
+
+}
 
 
 #endif // CONTAINEROBJECT_H

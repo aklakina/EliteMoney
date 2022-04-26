@@ -1,5 +1,7 @@
 #include "containerobject.h"
 
+using namespace techlevi;
+
 #pragma BaseClassDefinitions{
 
 Statistics Statistics::operator +=(const Statistics &x) {
@@ -45,7 +47,18 @@ bool ContainerObject::operator !=(const QString &b) const {
 
 mission::mission(unsigned ID) : MID(ID) {}
 
-mission::mission(unsigned ID, TargetedFaction* TFaction,  huntedSystem*  TSystem,  System*  SSystem,  faction*  SFaction,  station*  SStation, unsigned kills, double reward, bool Redirected, unsigned killsSoFarin)
+mission::mission(unsigned ID
+                 ,TargetedFaction* TFaction
+                 ,huntedSystem*  TSystem
+                 ,System*  SSystem
+                 ,faction*  SFaction
+                 ,station*  SStation
+                 ,unsigned kills
+                 ,double reward
+                 ,QDateTime AT
+                 ,QDateTime Exp
+                 ,bool Redirected
+                 ,unsigned killsSoFarin)
     :
       sourceStation(SStation)
     ,targetFaction(TFaction)
@@ -57,6 +70,8 @@ mission::mission(unsigned ID, TargetedFaction* TFaction,  huntedSystem*  TSystem
     ,killsSoFar(killsSoFarin)
     ,payout(reward)
     ,Completed(Redirected)
+    ,AcceptanceTime(AT)
+    ,Expiry(Exp)
 {}
 
 bool mission::operator <(const mission &b) const {
@@ -147,7 +162,7 @@ faction::faction(QString name)
 unsigned faction::reCalcStackHeight()
 {
     unsigned kills=0;
-    for (auto i:missions) {
+    for (auto i:missionsbyDate) {
         kills+=i->overallKillsNeeded;
     }
     totalKillsNeeded=kills;
@@ -156,40 +171,38 @@ unsigned faction::reCalcStackHeight()
 
 double faction::reCalcTotalReward() {
     double reward=0;
-    for (auto mission:missions) {
+    for (auto mission:missionsbyID) {
         reward+=mission->payout;
     }
     totalReward=reward;
     return reward;
 }
 
-pair<set<mission*>::iterator, bool> faction::add(mission *&input)
+pair<mission*, bool> faction::add(mission *&input)
 {
     pair<set<mission*>::iterator, bool> res;
     try {
-        res=missions.insert(input);
+        res=missionsbyID.insert(input);
+        if (res.second) {
+            res=missionsbyDate.insert(input);
+            this->totalKillsNeeded+=input->overallKillsNeeded;
+            this->totalReward+=input->payout;
+            this->totalKillsSoFar+=input->killsSoFar;
+            if (input->Completed) {
+                this->currentReward+=input->payout;
+            }
+            emit MissionAdded(input);
+        }
     }  catch (exception const & e) {
         qDebug()<<QString::fromStdString(e.what());
     }
-    if (!res.second) {
-        delete input;
-        input=(*res.first);
-    } else {
-        this->totalKillsNeeded+=input->overallKillsNeeded;
-        this->totalReward+=input->payout;
-        this->totalKillsSoFar+=input->killsSoFar;
-        if (input->Completed) {
-            this->currentReward+=input->payout;
-        }
-        emit MissionAdded(input);
-    }
-    return res;
+    return {*res.first,res.second};
 }
 
 pair<unsigned,unsigned> faction::countMissions()
 {
     pair<unsigned,unsigned> output={0,0};
-    for (auto mission:missions) {
+    for (auto mission:missionsbyDate) {
         if (mission->Completed) {
             output.second++;
         } else {
@@ -199,13 +212,19 @@ pair<unsigned,unsigned> faction::countMissions()
     return output;
 }
 
+void faction::removeMission(mission* toRemove)
+{
+    missionsbyID.erase(toRemove);
+    missionsbyDate.erase(toRemove);
+}
+
 Statistics huntedSystem::getStats(const GlobalFactions &glob)
 {
     Statistics stats;
     for (auto faction:glob) {
         auto res=findFaction(faction->name);
         if (res!=nullptr) {
-            stats.totalNumberOfMissions+=res->missions.size();
+            stats.totalNumberOfMissions+=res->getMissionsbyID().size();
             stats.totalKillsNeeded+=res->totalKillsNeeded;
             stats.totalPayout+=res->totalReward;
             stats.killsSoFar+=res->totalKillsSoFar;
@@ -213,6 +232,8 @@ Statistics huntedSystem::getStats(const GlobalFactions &glob)
             stats.currentPayout+=res->currentReward;
         }
     }
+    stats.StackHeight=glob.stackHeight;
+    stats.StackWidth=glob.stackWidth();
     return stats;
 }
 
@@ -239,8 +260,8 @@ result GlobalFactions::findMission(unsigned ID)
 {
     auto tempMission=new mission(ID);
     for (set<faction*>::iterator factions=container.begin();factions!=container.end();factions++) {
-        auto res=(*factions)->missions.find(tempMission);
-        if (res!=(*factions)->missions.end()) {
+        auto res=(*factions)->getMissionsbyID().find(tempMission);
+        if (res!=(*factions)->getMissionsbyID().end()) {
             delete tempMission;
             result temp;
             temp.factionPlace=factions;
@@ -266,20 +287,30 @@ unsigned GlobalFactions::reCalcStackHeight()
 unsigned GlobalFactions::reCalcTotalKills()
 {
     unsigned kills=0;
-    for (auto i:container) {
-        kills+=i->reCalcStackHeight();
+    totalKillsSoFar=0;
+    for (auto faction:container) {
+        for (auto mission:faction->getMissionsbyDate()) {
+            kills+=mission->overallKillsNeeded;
+            totalKillsSoFar+=mission->killsSoFar;
+        }
     }
     totalKills=kills;
     return kills;
 }
 
 unsigned GlobalFactions::getNumberOfMissions() {
-    unsigned num=0;
+    unsigned total=0;
+    unsigned completed=0;
+    currentPayout=0;
     for (auto faction:container) {
-        num+=faction->missions.size();
+        total+=faction->getMissionsbyID().size();
+        for (auto mission:faction->getMissionsbyID()) {
+            completed+=mission->Completed?1:0;
+            currentPayout+=mission->Completed?mission->payout:0;
+        }
     }
-    totalMissionCount=num;
-    return num;
+    totalMissionCount=total;
+    return total;
 }
 
 double GlobalFactions::reCalcTotalPayout() {
@@ -291,7 +322,15 @@ double GlobalFactions::reCalcTotalPayout() {
     return rew;
 }
 
-unsigned GlobalFactions::stackWidth() {return container.size();}
+unsigned GlobalFactions::stackWidth() const {return container.size();}
+
+void GlobalFactions::RefreshStatistics()
+{
+    reCalcTotalKills();
+    reCalcStackHeight();
+    reCalcTotalPayout();
+
+}
 
 void GlobalFactions::MissionAdded(mission *m)
 {
@@ -305,9 +344,3 @@ void GlobalFactions::MissionAdded(mission *m)
 }
 
 #pragma }
-
-
-
-
-
-

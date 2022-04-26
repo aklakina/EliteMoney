@@ -8,12 +8,13 @@
 #include <QTreeWidget>
 
 using namespace std;
-
+using namespace techlevi;
 namespace techlevi {
 
 
     struct Input {
         QString TSystem, SSystem, SFaction, SStation, TFaction;
+        QDateTime AcceptanceTime,Expiry;
         unsigned kills=0,MID,killsSoFar=0;
         double reward=0;
         bool completed=false;
@@ -46,17 +47,11 @@ namespace techlevi {
 
         void KillsperFaction();
 
-        void missionCompleted(unsigned ID,bool remove=false);
-
         void RemoveMission(unsigned *ID=nullptr);
-
-        void addMission(string dest,int kills, double reward, unsigned ID,QString Sfaction, QString Tfaction);
 
         map<huntedSystem*,Statistics> getStatistics();
 
         Result parseData(Input input, Result *prev=nullptr);
-
-        const GlobalFactions& getFactions() {return *globalFactions;}
 
         unsigned getStackHeight() {return globalFactions->stackHeight;}
 
@@ -74,11 +69,12 @@ namespace techlevi {
 
         void Refresh(GlobalFactions const &faction, HuntedSystems const & targetSystem,  bool deleted=false, mission const * m=nullptr);
 
-        void UpdateTree(GlobalFactions const & GlobalFactions);
+        void UpdateTree(AdvancedContainer<ContainerObject> * GlobalFactions, QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
 
         void addTreeItem(QString name);
 
         void RefreshUI(bool switcher,GlobalFactions const & faction);
+
 
     private:
 
@@ -104,6 +100,19 @@ namespace techlevi {
 
         void LoadDataFromJson(json & input);
 
+        void addMission(string dest,int kills, double reward, unsigned ID, bool wing,QString Sfaction, QString Tfaction, QDateTime AcceptanceTime, QDateTime Expiry);
+
+        void MissionRedirection(unsigned ID,QString newDest);
+
+        void missionCompleted(unsigned ID,bool remove=false);
+
+        void BountyCollected(QString Faction,unsigned Reward);
+
+        void calculateTheoreticalCompletion(int theoreticalKills, TheoreticalResults & _ret);
+
+        void Docked(QString System,QString Station);
+
+        void unDocked();
     };
 }
 

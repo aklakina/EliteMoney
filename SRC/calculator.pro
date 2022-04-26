@@ -12,6 +12,7 @@ SOURCES += \
     api.cpp \
     containerobject.cpp \
     data.cpp \
+    eventdistributer.cpp \
     main.cpp \
     mainwindow.cpp \
     overlay.cpp
@@ -20,6 +21,7 @@ HEADERS += \
     api.h \
     containerobject.h \
     data.h \
+    eventdistributer.h \
     json.hpp \
     mainwindow.h \
     overlay.h
