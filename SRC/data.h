@@ -10,32 +10,6 @@
 using namespace std;
 using namespace techlevi;
 namespace techlevi {
-
-
-    struct Input {
-        QString TSystem, SSystem, SFaction, SStation, TFaction;
-        QDateTime AcceptanceTime,Expiry;
-        unsigned kills=0,MID,killsSoFar=0;
-        double reward=0;
-        bool completed=false;
-    };
-    struct Result {
-        TargetedFaction* TFaction=nullptr;
-        huntedSystem* TSystem=nullptr;
-        System* SSystem=nullptr;
-        faction* SFaction=nullptr;
-        station* SStation=nullptr;
-        mission* Mission=nullptr;
-        void operator=(Result const & input) {
-            this->TSystem=input.TSystem;
-            this->SStation=input.SStation;
-            this->SSystem=input.SSystem;
-            this->SFaction=input.SFaction;
-            this->Mission=input.Mission;
-            this->TFaction=input.TFaction;
-        }
-    };
-
     class data : public QObject
     {
         Q_OBJECT
@@ -45,13 +19,9 @@ namespace techlevi {
         //explicit data(QObject *parent, Ui::MainWindow *Mui, API *parent_api);
         void Init(Ui::MainWindow *Mui, API *parent_api);
 
-        void KillsperFaction();
-
         void RemoveMission(unsigned *ID=nullptr);
 
-        map<huntedSystem*,Statistics> getStatistics();
-
-        Result parseData(Input input, Result *prev=nullptr);
+        Result parseData(Input input, Result *prev=nullptr, bool SingleInsert=true);
 
         unsigned getStackHeight() {return globalFactions->stackHeight;}
 
@@ -73,7 +43,9 @@ namespace techlevi {
 
         void addTreeItem(QString name);
 
-        void RefreshUI(bool switcher,GlobalFactions const & faction);
+        void RefreshUI(bool switcher);
+
+        void RefreshTable(GlobalFactions const & data);
 
 
     private:
@@ -88,7 +60,9 @@ namespace techlevi {
 
         currentStation *CurrentStation=nullptr;
 
-        void RecursiveDataReader(QTreeWidgetItem* item, string &a);
+        huntedSystem* Session=nullptr;
+
+        void RecursiveDataReader(AdvancedContainer<ContainerObject>* item, json &a,unsigned depth=0);
 
         void refreshdata(int depth=0, json *SavedData=nullptr, techlevi::Input * input=nullptr,techlevi::Result * Prev=nullptr);
 
@@ -96,7 +70,9 @@ namespace techlevi {
 
         void getUnifiedStatistics(Statistics* input);
 
-        void getJsonFormattedData(string * input,QTreeWidgetItem* item=nullptr);
+        map<huntedSystem*,Statistics> getStatistics(map<huntedSystem*,Statistics> *& res);
+
+        void getJsonFormattedData(string * input);
 
         void LoadDataFromJson(json & input);
 
@@ -113,6 +89,10 @@ namespace techlevi {
         void Docked(QString System,QString Station);
 
         void unDocked();
+
+        void JumpedToSystem(QString system);
+
+        void GetSession(huntedSystem *& input);
     };
 }
 

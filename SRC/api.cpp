@@ -94,11 +94,6 @@ void API::GetMissions() {
 
 void API::OnEvent(json event) {
     try {
-        qDebug()<<QString::fromStdString(event.dump());
-        json test=json::parse("{\"DestinationStation\":\"Bolton Gateway\",\"DestinationSystem\":\"HIP 114040\",\"Expiry\":\"2022-05-01T12:28:09Z\",\"Faction\":\"Aristocrats of HIP 114614\",\"Influence\":\"++\",\"KillCount\":36,\"LocalisedName\":\"Massacre HIP 114040 Crimson Drug Empire faction Pirates\",\"MissionID\":862486764,\"Name\":\"Mission_MassacreWing\",\"Reputation\":\"++\",\"Reward\":4347401,\"TargetFaction\":\"HIP 114040 Crimson Drug Empire\",\"TargetType\":\"$MissionUtil_FactionTag_Pirate;\",\"TargetType_Localised\":\"Pirates\",\"Wing\":true,\"event\":\"MissionAccepted\",\"timestamp\":\"2022-04-24T12:29:48Z\"}");
-        if (test==event) {
-            qDebug()<<"STOP";
-        }
         if ((string)event["event"]=="MissionAccepted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
             /*{ "timestamp":"2021-03-10T14:58:54Z"
              *  , "event":"MissionAccepted"
@@ -118,6 +113,7 @@ void API::OnEvent(json event) {
              *  , "Reward":2428060
              *  , "MissionID":726287843 }
              */
+            qDebug()<<"Mission added";
             emit addMission(
                     (string)event["DestinationSystem"]
                     ,(int)event["KillCount"]
@@ -139,10 +135,12 @@ void API::OnEvent(json event) {
              *  , "OldDestinationStation":""
              *  , "OldDestinationSystem":"Qi Yomisii" }
              */
+            qDebug()<<"Mission redirected";
             emit MissionRedirection((unsigned)event["MissionID"],QString::fromStdString((string)event["NewDestinationStation"]));
-        } else if ((string)event["event"]=="MissionCompleted") {
+        } else if ((string)event["event"]=="MissionCompleted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
             //missionCompleted((unsigned)event["MissionID"],true);
             //Mission Completed and handed in
+            qDebug()<<"Mission completed";
             emit missionCompleted((unsigned)event["MissionID"],true);
         } else if ((string)event["event"]=="Docked") {
             //Docked
@@ -163,8 +161,10 @@ void API::OnEvent(json event) {
              *, "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Private Enterprise", "Proportion":1.000000 } ]
              *, "DistFromStarLS":610.551176 }
              */
+            qDebug()<<"Docked";
             if (DockedStation==nullptr) DockedStation=new json(event);
             emit Docked(QString::fromStdString((string)event["StarSystem"]),QString::fromStdString((string)event["StationName"]));
+            emit JumpedToSystem(QString::fromStdString((string)event["StarSystem"]));
         } else if ((string)event["event"]=="Undocked") {
             /*{ "timestamp":"2021-03-14T18:59:39Z"
              *  , "event":"Undocked"
@@ -172,6 +172,7 @@ void API::OnEvent(json event) {
              *  , "StationType":"FleetCarrier"
              *  , "MarketID":3705556992 }
             */
+            qDebug()<<"undocked";
             if (DockedStation!=nullptr) {
                 delete DockedStation;
                 DockedStation=nullptr;
@@ -186,6 +187,7 @@ void API::OnEvent(json event) {
             emit BountyCollected(QString::fromStdString((string)event["VictimFaction"]),(unsigned)event["TotalReward"]);
         } else if ((string)event["event"]=="MissionAbandoned") {
             //Mission Cancelled
+            qDebug()<<"Mission abandoned";
             emit missionCompleted((unsigned)event["MissionID"]);
             emit missionCompleted((unsigned)event["MissionID"],true);
         } else if ((string)event["event"]=="ShipyardSwap") {
@@ -199,6 +201,30 @@ void API::OnEvent(json event) {
              * , "MarketID":3221679616 }
              */
             emit ShipChanged(QString::fromStdString((string)event["ShipType"]));
+        } else if ((string)event["event"]=="FSDJump") {
+            /* { "timestamp":"2022-04-21T20:05:12Z"
+             * , "event":"FSDJump"
+             * , "StarSystem":"Pegasi Sector XU-O b6-4"
+             * , "SystemAddress":9465168209329
+             * , "StarPos":[-129.56250,-75.81250,15.78125]
+             * , "SystemAllegiance":""
+             * , "SystemEconomy":"$economy_None;"
+             * , "SystemEconomy_Localised":"None"
+             * , "SystemSecondEconomy":"$economy_None;"
+             * , "SystemSecondEconomy_Localised":"None"
+             * , "SystemGovernment":"$government_None;"
+             * , "SystemGovernment_Localised":"None"
+             * , "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;"
+             * , "SystemSecurity_Localised":"Anarchy"
+             * , "Population":0
+             * , "Body":"Pegasi Sector XU-O b6-4"
+             * , "BodyID":0
+             * , "BodyType":"Star"
+             * , "JumpDist":19.757
+             * , "FuelUsed":6.710013
+             * , "FuelLevel":25.289986 }
+             */
+            emit JumpedToSystem(QString::fromStdString((string)event["StarSystem"]));
         }
     } catch (const std::exception& e) {
         qDebug()<<QString::fromStdString(event.dump());

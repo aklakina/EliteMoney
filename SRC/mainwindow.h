@@ -10,6 +10,8 @@
 #include <QListWidget>
 #include <QObject>
 #include <QFileSystemWatcher>
+#include <QFont>
+#include <QFontDatabase>
 
 using json=nlohmann::json;
 using namespace std;
@@ -55,7 +57,15 @@ private:
     void firsttreefiller();
     void resetTreeColor();
     void on_listWidget_2_itemClicked(QString file_1);
+    bool SearchTreeRecursively(QTreeWidgetItem* item,QString name);
+    void ExpandChildsToo(QTreeWidgetItem* item);
+    void RetractAll(QTreeWidgetItem* item);
     Overlay *ol;
+    QIcon *wing;
+    QFont *Header;
+    QFont *General;
+    QFont *Numbers;
+    QFont *Tree;
 
 public slots:
 
@@ -63,21 +73,29 @@ public slots:
 
     void RefreshTree(GlobalFactions const & GlobalFactions);
 
-    void Refresh_UI(bool switcher,GlobalFactions const & data);
+    void Refresh_UI(bool switcher);
 
     void addTreeItem(QString name);
 
     void RebuildTree(AdvancedContainer<ContainerObject> *CompleteData, QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
 
+    void RefreshTable(GlobalFactions const & data);
+
+    void ExpandTree(QString name);
+
 signals:
 
     void SaveData(QString path);
+
+    void requestStatistics(map<huntedSystem*,Statistics> *& stats);
 
     void requestUnifiedStatistics(Statistics * stats);
 
     void LoadData(QString path);
 
     void requestTheorData(int const & theorKills,TheoreticalResults & _ret);
+
+    void requestSession(huntedSystem *& input);
 
 };
 

@@ -57,6 +57,7 @@ mission::mission(unsigned ID
                  ,double reward
                  ,QDateTime AT
                  ,QDateTime Exp
+                 ,bool Wing
                  ,bool Redirected
                  ,unsigned killsSoFarin)
     :
@@ -72,6 +73,7 @@ mission::mission(unsigned ID
     ,Completed(Redirected)
     ,AcceptanceTime(AT)
     ,Expiry(Exp)
+    ,Winged(Wing)
 {}
 
 bool mission::operator <(const mission &b) const {
@@ -184,7 +186,7 @@ pair<mission*, bool> faction::add(mission *&input)
     try {
         res=missionsbyID.insert(input);
         if (res.second) {
-            res=missionsbyDate.insert(input);
+            missionsbyDate.insert(input);
             this->totalKillsNeeded+=input->overallKillsNeeded;
             this->totalReward+=input->payout;
             this->totalKillsSoFar+=input->killsSoFar;
@@ -218,9 +220,10 @@ void faction::removeMission(mission* toRemove)
     missionsbyDate.erase(toRemove);
 }
 
-Statistics huntedSystem::getStats(const GlobalFactions &glob)
+Statistics huntedSystem::getStats(GlobalFactions &glob)
 {
     Statistics stats;
+    glob.RefreshStatistics();
     for (auto faction:glob) {
         auto res=findFaction(faction->name);
         if (res!=nullptr) {
@@ -310,6 +313,7 @@ unsigned GlobalFactions::getNumberOfMissions() {
         }
     }
     totalMissionCount=total;
+    CompletedMissionCount=completed;
     return total;
 }
 
@@ -329,7 +333,7 @@ void GlobalFactions::RefreshStatistics()
     reCalcTotalKills();
     reCalcStackHeight();
     reCalcTotalPayout();
-
+    getNumberOfMissions();
 }
 
 void GlobalFactions::MissionAdded(mission *m)

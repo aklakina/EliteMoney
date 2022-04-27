@@ -19,6 +19,30 @@ class faction;
 class huntedSystem;
 class mission;
 class TargetedFaction;
+struct Input {
+    QString TSystem, SSystem, SFaction, SStation, TFaction;
+    QDateTime AcceptanceTime,Expiry;
+    unsigned kills=0,MID,killsSoFar=0;
+    double reward=0;
+    bool completed=false,Winged;
+};
+struct Result {
+    TargetedFaction* TFaction=nullptr;
+    huntedSystem* TSystem=nullptr;
+    System* SSystem=nullptr;
+    faction* SFaction=nullptr;
+    station* SStation=nullptr;
+    mission* Mission=nullptr;
+    void operator=(Result const & input) {
+        this->TSystem=input.TSystem;
+        this->SStation=input.SStation;
+        this->SSystem=input.SSystem;
+        this->SFaction=input.SFaction;
+        this->Mission=input.Mission;
+        this->TFaction=input.TFaction;
+    }
+};
+
 template <class T>
 struct defaultPointerCmp {
     bool operator ()(T * const &a, T * const &b) const {
@@ -85,7 +109,8 @@ public:
     pair<typename set<T*>::iterator,bool> add(T *&input);
     pair<T*,bool> pop(T *f);
     T *remove(typename set<T*>::iterator f);
-    unsigned getSize();;
+    unsigned getSize();
+    unsigned getSize() const;
     typename set<T*>::iterator Get(unsigned i);
 };
 
@@ -100,7 +125,7 @@ public:
     unsigned MID=0;
     int overallKillsNeeded=0, killsSoFar=0;
     double payout=0;
-    bool Completed=false;
+    bool Completed=false,Winged;
     QDateTime AcceptanceTime,Expiry;
     mission(unsigned ID);
     mission(
@@ -114,6 +139,7 @@ public:
             ,double reward
             ,QDateTime AT
             ,QDateTime Exp
+            ,bool Winged
             ,bool Redirected=false
             ,unsigned killsSoFarin=0
             );
@@ -170,7 +196,7 @@ class faction : public ContainerObject {
 private:
     set<sysStat*, defaultPointerCmp<sysStat>> homes;
     set<mission*, defaultPointerCmp<mission>> missionsbyID;
-    set<mission*, DateComperator> missionsbyDate;
+    multiset<mission*, DateComperator> missionsbyDate;
 public:
     faction(QString name);
     double totalReward=0, currentReward=0;
@@ -180,7 +206,7 @@ public:
     pair<mission*,bool> add(mission *&input);
     pair<unsigned,unsigned> countMissions();
     const set<mission*, defaultPointerCmp<mission>> &getMissionsbyID() const {return missionsbyID;}
-    const set<mission*, DateComperator> &getMissionsbyDate() const {return missionsbyDate;}
+    const multiset<mission*, DateComperator> &getMissionsbyDate() const {return missionsbyDate;}
     const set<sysStat*, defaultPointerCmp<sysStat>> &getHomes() const {return homes;}
     void InsertHome(sysStat * input) {homes.insert(input);}
     void removeMission(mission* toRemove);
@@ -234,7 +260,7 @@ public:
 class huntedSystem : public AdvancedContainer<System> {
 public:
     using AdvancedContainer::AdvancedContainer;
-    Statistics getStats(const GlobalFactions &glob);
+    Statistics getStats(GlobalFactions &glob);
     faction *findFaction(QString faction);
     set<TargetedFaction*> TargetedFactions;
 };
@@ -314,6 +340,9 @@ T *AdvancedContainer<T>::remove(typename set<T*>::iterator f)
 
 template<class T>
 unsigned AdvancedContainer<T>::getSize() {return container.size();}
+
+template<class T>
+unsigned AdvancedContainer<T>::getSize() const {return container.size();}
 
 template<class T>
 typename set<T*>::iterator AdvancedContainer<T>::Get(unsigned i)

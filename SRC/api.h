@@ -68,7 +68,7 @@ signals:
 
     void requestStatistics(Statistics* input);
 
-    void requestJson(string * input,QTreeWidgetItem* item=nullptr);
+    void requestJson(string * input);
 
     void provideJson(json & input);
 
@@ -85,6 +85,8 @@ signals:
     void AddFileToFSWatcher(QString path);
 
     void unDocked();
+
+    void JumpedToSystem(QString name);
 };
 }
 #endif // API_H

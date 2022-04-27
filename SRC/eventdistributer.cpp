@@ -26,6 +26,7 @@ EventDistributor::EventDistributor(MainWindow *MW, API *Iapi, techlevi::data *da
     connect(Data,&techlevi::data::UpdateTree,mw,&MainWindow::RebuildTree);
     connect(Data,&techlevi::data::RefreshUI,mw,&MainWindow::Refresh_UI);
     connect(Data,&techlevi::data::addTreeItem,mw,&MainWindow::addTreeItem, Qt::DirectConnection);
+    connect(Data,&techlevi::data::RefreshTable,mw,&MainWindow::RefreshTable);
     connect(api,&API::requestStatistics,Data,&techlevi::data::getUnifiedStatistics, Qt::DirectConnection);
     connect(api,&API::requestJson, Data, &techlevi::data::getJsonFormattedData, Qt::DirectConnection);
     connect(api,&API::provideJson, Data, &techlevi::data::LoadDataFromJson);
@@ -35,10 +36,12 @@ EventDistributor::EventDistributor(MainWindow *MW, API *Iapi, techlevi::data *da
     connect(api,&API::Docked,Data,&techlevi::data::Docked);
     connect(api,&API::unDocked,Data,&techlevi::data::unDocked);
     connect(api,&API::BountyCollected,Data,&techlevi::data::BountyCollected);
-
     connect(api,&API::AddFileToFSWatcher,this,&EventDistributor::AddFileToFSWatcher);
+    connect(api,&API::JumpedToSystem,mw,&MainWindow::ExpandTree);
     connect(mw,&MainWindow::requestTheorData,Data,&techlevi::data::calculateTheoreticalCompletion,Qt::DirectConnection);
+    connect(mw,&MainWindow::requestStatistics,Data,&techlevi::data::getStatistics,Qt::DirectConnection);
     connect(mw,&MainWindow::requestUnifiedStatistics,Data,&techlevi::data::getUnifiedStatistics,Qt::DirectConnection);
+    connect(mw,&MainWindow::requestSession,Data,&techlevi::data::GetSession,Qt::DirectConnection);
     connect(mw,&MainWindow::LoadData,api,&API::LoadData);
     connect(mw,&MainWindow::SaveData,api,&API::SaveData);
 
