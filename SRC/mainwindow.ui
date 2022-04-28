@@ -59,6 +59,9 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
         <property name="tabPosition">
          <enum>QTabWidget::West</enum>
         </property>
@@ -629,7 +632,14 @@
     <addaction name="separator"/>
     <addaction name="actionStart_new_session"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionEdit_overlay"/>
+   </widget>
    <addaction name="menuFiles"/>
+   <addaction name="menuView"/>
   </widget>
   <action name="actionSave_Session">
    <property name="text">
@@ -644,6 +654,11 @@
   <action name="actionStart_new_session">
    <property name="text">
     <string>Start new session</string>
+   </property>
+  </action>
+  <action name="actionEdit_overlay">
+   <property name="text">
+    <string>Edit overlay...</string>
    </property>
   </action>
  </widget>

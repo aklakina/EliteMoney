@@ -312,6 +312,8 @@ void MainWindow::completedData(GlobalFactions const & data,HuntedSystems const &
 void MainWindow::Refresh_UI(bool switcher) {
     auto Stats=new Statistics();
     emit requestUnifiedStatistics(Stats);
+    huntedSystem* Session=nullptr;
+    emit requestSession(Session);
     ui->horizontalSlider->setMaximum(Stats->StackHeight);
     ui->label_8->setText(QString::number(Stats->totalPayout));
     ui->Curr_payout->setText(QString::number(Stats->currentPayout));
@@ -343,6 +345,7 @@ void MainWindow::Refresh_UI(bool switcher) {
         ui->label_11->setText("0");
         ui->label_8->setText("0");
     }
+    ui->systemName->setText(Session->name);
     ui->treeWidget->clear();
 }
 
@@ -464,3 +467,30 @@ void MainWindow::on_pushButton_clicked()
     clipboard->setText(a);
 }
 
+void MainWindow::on_actionEdit_overlay_triggered()
+{
+    olEdit=new OverlayEditor(ol);
+    olEdit->show();
+}
+
+void MainWindow::keyPressEvent( QKeyEvent *k )
+{
+    switch ( k->key() )
+    {
+        case Qt::Key_Up:
+            qDebug() << "UP";
+            break;
+        case Qt::Key_Down:
+            qDebug() << "DOWN";
+            break;
+        case Qt::Key_Left:
+            qDebug() << "LEFT";
+            break;
+        case Qt::Key_Right:
+            qDebug() << "RIGHT";
+            break;
+    default:
+            qDebug() << k->key() << "\n";
+            break;
+    }
+}

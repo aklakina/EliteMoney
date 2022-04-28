@@ -5,6 +5,7 @@
 #include "api.h"
 #include "data.h"
 #include "overlay.h"
+#include "overlayeditor.h"
 
 #include <QMainWindow>
 #include <QListWidget>
@@ -12,6 +13,7 @@
 #include <QFileSystemWatcher>
 #include <QFont>
 #include <QFontDatabase>
+#include <QKeyEvent>
 
 using json=nlohmann::json;
 using namespace std;
@@ -47,12 +49,15 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void on_actionEdit_overlay_triggered();
+
 
 private:
     Ui::MainWindow *ui;
     API* api;
     techlevi::data* Data;
     EventDistributor *ev;
+    OverlayEditor* olEdit;
     int selecteditem=0;
     void firsttreefiller();
     void resetTreeColor();
@@ -82,6 +87,8 @@ public slots:
     void RefreshTable(GlobalFactions const & data);
 
     void ExpandTree(QString name);
+
+    void keyPressEvent( QKeyEvent *k );
 
 signals:
 

@@ -161,7 +161,7 @@ void data::addMission(string dest,int kills, double reward, unsigned ID, bool wi
     input.AcceptanceTime=AcceptanceTime;
     input.Expiry=Expiry;
     input.Winged=wing;
-    parseData(input);
+    auto res=parseData(input);
     emit RefreshTable(*globalFactions);
     globalFactions->RefreshStatistics();
     emit UpdateTree((AdvancedContainer<ContainerObject>*)CompleteData);
@@ -437,6 +437,9 @@ void data::refreshdata(int depth,json *SavedData, techlevi::Input * input, techl
 
             for (auto k=ChildObject.begin();k!=ChildObject.end();k++) {
                 json miss=k.value();
+                if (QDateTime::fromString(QString::fromStdString(miss["Time of expiry"]),"yyyy'-'MM'-'dd' 'hh':'mm':'ss")<QDateTime::currentDateTime()) {
+                    continue;
+                }
                 if (miss["Completed"]) {
                     input->completed=true;
                     ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()+1));

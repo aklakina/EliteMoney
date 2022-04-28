@@ -93,6 +93,8 @@ namespace techlevi {
         void JumpedToSystem(QString system);
 
         void GetSession(huntedSystem *& input);
+
+    private slots:
     };
 }
 

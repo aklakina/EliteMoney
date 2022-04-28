@@ -15,7 +15,8 @@ SOURCES += \
     eventdistributer.cpp \
     main.cpp \
     mainwindow.cpp \
-    overlay.cpp
+    overlay.cpp \
+    overlayeditor.cpp
 
 HEADERS += \
     api.h \
@@ -24,10 +25,12 @@ HEADERS += \
     eventdistributer.h \
     json.hpp \
     mainwindow.h \
-    overlay.h
+    overlay.h \
+    overlayeditor.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    overlayeditor.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
