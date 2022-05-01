@@ -9,7 +9,7 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    api.cpp \
+    io.cpp \
     containerobject.cpp \
     data.cpp \
     eventdistributer.cpp \
@@ -19,10 +19,9 @@ SOURCES += \
     overlayeditor.cpp
 
 HEADERS += \
-    api.h \
+    io.h \
     containerobject.h \
     data.h \
-    eventdistributer.h \
     json.hpp \
     mainwindow.h \
     overlay.h \
@@ -36,6 +35,9 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+win32 {
+    LIBS += -luser32
+}
 
 RESOURCES += \
     Resources.qrc

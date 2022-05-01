@@ -21,11 +21,26 @@ MainWindow::MainWindow(QWidget *parent)
     ui->kills_made->setText("0 (0%)");
     ui->treeWidget_3->setCurrentItem(nullptr);
 
-    api=new techlevi::API();
+
     Data=new techlevi::data();
-    Data->Init(this->ui,api);
-    ev=new EventDistributor(this,api,Data);
+    Data->Init(this->ui);
+    io=new techlevi::IO();
+    ev=new EventDistributor(this,io,Data);
     wing=new QIcon(":/icons/Resources/Logos/Wing.svg");
+
+    QPixmap pixmap = wing->pixmap(QSize(20,20));
+    QImage tmp = pixmap.toImage();
+    QColor color("#0A8BD6");
+    for(int y = 0; y < tmp.height(); y++) {
+        for(int x= 0; x < tmp.width(); x++) {
+            color.setAlpha(tmp.pixelColor(x,y).alpha());
+            tmp.setPixelColor(x,y,color);
+        }
+    }
+    pixmap = QPixmap::fromImage(tmp);
+    delete wing;
+    wing=new QIcon(pixmap);
+
     int id;
     QString family;
     id = QFontDatabase::addApplicationFont(":/fonts/Resources/Fonts/EUROCAPS.TTF");
@@ -41,28 +56,55 @@ MainWindow::MainWindow(QWidget *parent)
     Tree = new QFont(family);
 
     ol=new Overlay(this);
+    LoadOverlayData();
 
-    ui->treeWidget_3->setFont(*Tree);
     ui->systemName->setFont(*Header);
     ui->tableWidget->setFont(*General);
+    this->setStyleSheet(this->styleSheet()+"\n font: 10pt "+General->family()+";");
+    QString MainWindowStyle="color: rgb(255, 113, 0);"
+            "background-color: rgba(43, 34, 34, 100);"
+            "selection-background-color: rgba(10, 139, 214, 120);"
+            "QPushButton::Hovered {"
+                "border-color: rgb(10, 139, 214);"
+            "};";
+    setStyleSheet(MainWindowStyle);
+    ui->treeWidget_3->setStyleSheet(ui->treeWidget_3->styleSheet()+"\n font: 10pt "+Tree->family()+";");
+    ui->systemName->setStyleSheet(ui->systemName->styleSheet()+"\n font: 10pt "+Tree->family()+";");
+    ol->setStyleSheet("background-color: transparent; font: 9pt "+General->family()+";");
+    setWindowIcon(QIcon(":/icons/Resources/Logos/elite-dangerous-vektor.svg"));
+    io->init();
 }
 
 void MainWindow::RefreshTable(GlobalFactions const & data) {
     ui->tableWidget->clear();
-    ui->tableWidget->setRowCount(data.getSize());
+    ui->tableWidget->setRowCount(data.getSize()+1);
     int curr_row=0;
     int curr_col=0;
     vector<int> frags;
     for (auto factions:data) {
-        if (ui->tableWidget->columnCount()<(int)factions->getMissionsbyID().size()+2) {
-            ui->tableWidget->setColumnCount(factions->getMissionsbyID().size()+2);
+        int size=0;
+        for (auto mission:factions->getMissionsbyDate()) {
+            if (!mission->Completed) size++;
+        }
+        if (ui->tableWidget->columnCount()<size+2) {
+            ui->tableWidget->setColumnCount(size+2);
         }
     }
-    for (unsigned k=0;k<data.getSize();k++) {
+    for (unsigned k=0;k<data.getSize()+1;k++) {
         for (unsigned j=ui->tableWidget->columnCount();j>0;j--) {
             ui->tableWidget->setItem(k,j,new QTableWidgetItem(""));
         }
     }
+    for (auto col=0;col<ui->tableWidget->columnCount();col++) {
+        if (col==0) {
+            ui->tableWidget->setItem(col,0,new QTableWidgetItem("Factions"));
+        } else if (col<ui->tableWidget->columnCount()-1) {
+            ui->tableWidget->item(0,col)->setText("Mission "+QString::number(col));
+        } else if (col==ui->tableWidget->columnCount()-1) {
+            ui->tableWidget->item(0,col)->setText("Stack height");
+        }
+    }
+    curr_row++;
     for (auto faction:data) {
         int frags_needed=0;
         curr_col=0;
@@ -88,18 +130,12 @@ void MainWindow::RefreshTable(GlobalFactions const & data) {
         ui->tableWidget->setItem(curr_row,0,temp);
         curr_row++;
     }
-    curr_row=0;
+    curr_row=1;
     for (auto i:frags) {
         ui->tableWidget->item(curr_row,ui->tableWidget->columnCount()-1)->setText(QString::number(i));
         curr_row++;
     }
-    QStringList labels;
-    labels.push_back("Factions");
-    for (auto i=0;i<ui->tableWidget->columnCount()-2;i++) {
-        labels.push_back("Mission Layer "+QString::number(i+1));
-    }
-    labels.push_back("Total kills needed");
-    ui->tableWidget->setHorizontalHeaderLabels(labels);
+    applyTableStyle();
     ui->tableWidget->resizeColumnsToContents();
 }
 
@@ -110,6 +146,7 @@ void MainWindow::ExpandTree(QString name)
         if (ui->treeWidget_3->topLevelItem(topItemIndex)->text(0)==name) {
             ExpandChildsToo(ui->treeWidget_3->topLevelItem(topItemIndex));
             ui->treeWidget_3->expandItem(ui->treeWidget_3->topLevelItem(topItemIndex));
+            break;
         } else {
             if (SearchTreeRecursively(ui->treeWidget_3->topLevelItem(topItemIndex),name)) {
                 ExpandChildsToo(ui->treeWidget_3->topLevelItem(topItemIndex));
@@ -119,27 +156,59 @@ void MainWindow::ExpandTree(QString name)
     }
 }
 
-void MainWindow::resetTreeColor() {
-    QTreeWidgetItem* temp;
-    for (auto i=0;i<ui->treeWidget->topLevelItemCount();i++) {
-        temp=ui->treeWidget->topLevelItem(i);
-        temp->setBackground(0,QBrush(QColor(255,255,255)));
-        QTreeWidgetItem* temp_1;
-        for (auto i=0;i<temp->childCount();i++) {
-            temp_1=temp->child(i);
-            temp_1->setBackground(0,QBrush(QColor(255,255,255)));
-            QTreeWidgetItem* temp_2;
-            for (auto i=0;i<temp_1->childCount();i++) {
-                temp_2=temp_1->child(i);
-                temp_2->setBackground(0,QBrush(QColor(255,255,255)));
-                QTreeWidgetItem* temp_3;
-                for (auto i=0;i<temp_2->childCount();i++) {
-                    temp_3=temp_2->child(i);
-                    temp_3->setBackground(0,QBrush(QColor(255,165,0)));
-                }
-            }
-        }
+void MainWindow::buildStationMissionData(const vector<mission *> &data)
+{
+    ui->Curr_payout->setText("0");
+    ui->tableWidget->clear();
+    ui->tableWidget->setRowCount(data.size()+1);
+    ui->tableWidget->setColumnCount(3);
+    ui->tableWidget->setItem(0,0,new QTableWidgetItem("Faction"));
+    ui->tableWidget->setItem(0,1,new QTableWidgetItem("Kills"));
+    ui->tableWidget->setItem(0,2,new QTableWidgetItem("Payout"));
+    unsigned curr_row=1;
+    for (auto mission:data) {
+        ui->tableWidget->setItem(curr_row,0,new QTableWidgetItem(mission->sourceFaction->name));
+        ui->tableWidget->setItem(curr_row,1,new QTableWidgetItem(QString::number(mission->overallKillsNeeded)));
+        ui->tableWidget->setItem(curr_row,2,new QTableWidgetItem(QString::number(mission->payout)));
+        ui->Curr_payout->setText(QString::number(ui->Curr_payout->text().toDouble()+mission->payout));
+        curr_row++;
     }
+    applyTableStyle();
+    ui->tableWidget->resizeColumnsToContents();
+}
+
+void MainWindow::buildCompletedMissionData(const vector<mission *> &data)
+{
+    ui->tableWidget->clear();
+    ui->tableWidget->setColumnCount(5);
+    map<pair<System*,station*>,pair<pair<unsigned,unsigned>,double>> DistinctStationData;
+
+    unsigned curr_row=1;
+    for (auto mission:data) {
+        auto res=DistinctStationData.insert({{mission->sourceSystem,mission->sourceStation},{{0,0},0}});
+        res.first->second.first.first++;
+        res.first->second.first.second+= mission->Winged ? 1 : 0;
+        res.first->second.second+=mission->payout;
+    }
+    ui->tableWidget->setRowCount(DistinctStationData.size()+1);
+    ui->tableWidget->setItem(0,0,new QTableWidgetItem("System"));
+    ui->tableWidget->setItem(0,1,new QTableWidgetItem("Station"));
+    ui->tableWidget->setItem(0,2,new QTableWidgetItem("Number of missions"));
+    ui->tableWidget->setItem(0,3,new QTableWidgetItem("Shareable missions"));
+    ui->tableWidget->setItem(0,4,new QTableWidgetItem("Total Payout"));
+    for (auto station:DistinctStationData) {
+        ui->tableWidget->setItem(curr_row,0,new QTableWidgetItem(station.first.first->name));
+        ui->tableWidget->setItem(curr_row,1,new QTableWidgetItem(station.first.second->name));
+        ui->tableWidget->setItem(curr_row,2,new QTableWidgetItem(QString::number(station.second.first.first)));
+        ui->tableWidget->setItem(curr_row,3,new QTableWidgetItem(QString::number(station.second.first.second)));
+        ui->tableWidget->item(curr_row,3)->setIcon(*wing);
+        ui->tableWidget->setItem(curr_row,4,new QTableWidgetItem(QString::number(station.second.second)));
+    }
+    applyTableStyle();
+    ui->tableWidget->resizeColumnsToContents();
+}
+
+void MainWindow::resetTreeColor() {
     for (auto i=0;i<ui->tableWidget->rowCount();i++) {
         for (auto j=0;j<ui->tableWidget->columnCount();j++) {
             ui->tableWidget->item(i,j)->setBackground(QBrush(QColor(255,255,255)));
@@ -168,6 +237,31 @@ void MainWindow::RetractAll(QTreeWidgetItem *item)
     for (auto index=0;index<item->childCount();index++) {
         ExpandChildsToo(item->child(index));
         item->child(index)->setExpanded(false);
+    }
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    emit SaveData(QDir::currentPath()+"/System/AutoBackup_"+ui->systemName->text().replace(' ','_')+".json");
+    emit SaveUIConfig(ol->GetUserConfig());
+    event->accept();
+}
+
+void MainWindow::LoadOverlayData()
+{
+    json olConf;
+    emit getOverlayData(&olConf);
+    json CombatStatData=olConf["Combat Statistic config"];
+    ol->CombatStatProperties->setPos(CombatStatData["Px"],CombatStatData["Py"],CombatStatData["Dx"],CombatStatData["Dy"],CombatStatData["ODy"]);
+}
+
+void MainWindow::applyTableStyle()
+{
+    for (auto col=0;col<ui->tableWidget->columnCount();col++) {
+        ui->tableWidget->item(0,col)->setFont(*Header);
+        for (auto row=1;row<ui->tableWidget->rowCount();row++) {
+            ui->tableWidget->item(row,col)->setFont(*General);
+        }
     }
 }
 
@@ -276,37 +370,8 @@ void MainWindow::RefreshTree(GlobalFactions const & GlobalFactions) {
 
 MainWindow::~MainWindow()
 {
-
-    emit SaveData("./System/AutoBackup_"+QDateTime::currentDateTime().toString("yyyy-MM-dd_hh:mm:ss")+".json");
     delete ui;
 
-}
-
-void MainWindow::completedData(GlobalFactions const & data,HuntedSystems const & CompleteData, bool deleted, mission const * m) {
-    ui->Curr_payout->setText("0");
-    for (auto huntedSystem:CompleteData) {
-        for (auto system:*huntedSystem) {
-            for (auto station:(*system)) {
-                QTreeWidgetItem * temp=new QTreeWidgetItem();
-                temp->setText(0,system->name+"::"+station->name);
-                for (auto factionPlace:data) {
-                    faction* faction=(factionPlace);
-                    for (auto mission:(factionPlace->getMissionsbyID())) {
-                        if ((mission->sourceStation)->name==station->name && mission->Completed) {
-                            QTreeWidgetItem * temp_1=new QTreeWidgetItem();
-                            temp_1->setText(0,faction->name+"::     "+QString::number(mission->payout)+"$ K");
-                            temp->addChild(temp_1);
-                            ui->Curr_payout->setText(QString::number(ui->Curr_payout->text().toDouble()+mission->payout));
-                        }
-                    }
-                }
-            }
-        }
-    }
-    Refresh_UI(true);
-    if (deleted) {
-        ui->label_8->setText(QString::number(ui->label_8->text().toDouble()-m->payout));
-    }
 }
 
 void MainWindow::Refresh_UI(bool switcher) {
@@ -317,14 +382,13 @@ void MainWindow::Refresh_UI(bool switcher) {
     ui->horizontalSlider->setMaximum(Stats->StackHeight);
     ui->label_8->setText(QString::number(Stats->totalPayout));
     ui->Curr_payout->setText(QString::number(Stats->currentPayout));
-    ui->treeWidget->expandAll();
     ui->label_9->setText(QString::number(Stats->StackHeight));
     if (Stats->StackHeight!=0) {
         int temp_4=100*Stats->killsSoFar/Stats->StackHeight;
         ui->kills_made->setText(QString::number(Stats->killsSoFar)+" ("+QString::number(temp_4)+"%)");
         ui->kills_left->setText(QString::number(Stats->StackHeight-Stats->killsSoFar)+" ("+QString::number(100-temp_4)+"%)");
         double res=(double)Stats->totalKillsNeeded/(double)Stats->StackHeight;
-        ui->label_10->setText(QString::number(res, 'f', 10));
+        ui->label_10->setText(QString::number(res, 'f', 3));
         if (switcher) {
             if (ui->label_10->text().toDouble()<2.0f) {
                 ui->label_20->setText("Stop hunting and go back and turn in your missions");
@@ -339,14 +403,15 @@ void MainWindow::Refresh_UI(bool switcher) {
             }
         }
         res=(ui->label_8->text().toDouble()*1000/Stats->StackHeight)/1000000;
-        ui->label_11->setText((QString::number(res, 'f', 10))+"$ M");
+        ui->label_11->setText((QString::number(res, 'f', 3))+"$ M");
     } else {
         ui->label_10->setText("0");
         ui->label_11->setText("0");
         ui->label_8->setText("0");
     }
-    ui->systemName->setText(Session->name);
-    ui->treeWidget->clear();
+    ui->systemName->setText(Session==nullptr?"SYSTEM":Session->name);
+    ol->CombatStatProperties->setText(0,0,QString::number(Stats->StackHeight-Stats->killsSoFar));
+    ol->CombatStatProperties->setText(1,0,QString::number(Stats->currentPayout));
 }
 
 void MainWindow::addTreeItem(QString name)
@@ -467,30 +532,9 @@ void MainWindow::on_pushButton_clicked()
     clipboard->setText(a);
 }
 
-void MainWindow::on_actionEdit_overlay_triggered()
+void MainWindow::on_actionEdit_Overlay_triggered()
 {
     olEdit=new OverlayEditor(ol);
     olEdit->show();
 }
 
-void MainWindow::keyPressEvent( QKeyEvent *k )
-{
-    switch ( k->key() )
-    {
-        case Qt::Key_Up:
-            qDebug() << "UP";
-            break;
-        case Qt::Key_Down:
-            qDebug() << "DOWN";
-            break;
-        case Qt::Key_Left:
-            qDebug() << "LEFT";
-            break;
-        case Qt::Key_Right:
-            qDebug() << "RIGHT";
-            break;
-    default:
-            qDebug() << k->key() << "\n";
-            break;
-    }
-}

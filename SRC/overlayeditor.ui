@@ -13,85 +13,113 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgba(240, 123, 5, 100);
+border-color: rgba(255, 255, 255, 0);
+gridline-color: rgba(255, 255, 255, 0);</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>88</width>
-      <height>146</height>
+      <x>210</x>
+      <y>170</y>
+      <width>118</width>
+      <height>148</height>
      </rect>
     </property>
-    <layout class="QVBoxLayout" name="verticalLayout_2">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QSlider" name="horizontalSlider">
-         <property name="statusTip">
-          <string>Horizontal position of stat labels: </string>
-         </property>
-         <property name="whatsThis">
-          <string>Horizontal position of stat labels</string>
-         </property>
-         <property name="maximum">
-          <number>2000</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QSlider" name="horizontalSlider">
+           <property name="statusTip">
+            <string>Horizontal position of stat labels: </string>
+           </property>
+           <property name="whatsThis">
+            <string>Horizontal position of stat labels</string>
+           </property>
+           <property name="maximum">
+            <number>2000</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSlider" name="horizontalSlider_2">
+           <property name="statusTip">
+            <string>Distance between name and value: </string>
+           </property>
+           <property name="whatsThis">
+            <string>Distance between name and value</string>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QSlider" name="horizontalSlider_2">
-         <property name="statusTip">
-          <string>Distance between name and value: </string>
-         </property>
-         <property name="whatsThis">
-          <string>Distance between name and value</string>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QSlider" name="verticalSlider">
+           <property name="statusTip">
+            <string>Vertical position of Stat labels: </string>
+           </property>
+           <property name="whatsThis">
+            <string>Vertical position of Stat labels</string>
+           </property>
+           <property name="maximum">
+            <number>2000</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSlider" name="verticalSlider_2">
+           <property name="statusTip">
+            <string>Vertical distance of labels: </string>
+           </property>
+           <property name="whatsThis">
+            <string>Vertical distance of labels</string>
+           </property>
+           <property name="maximum">
+            <number>2000</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QSlider" name="verticalSlider">
-         <property name="statusTip">
-          <string>Vertical position of Stat labels: </string>
-         </property>
-         <property name="whatsThis">
-          <string>Vertical position of Stat labels</string>
-         </property>
-         <property name="maximum">
-          <number>2000</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSlider" name="verticalSlider_2">
-         <property name="statusTip">
-          <string>Vertical distance of labels: </string>
-         </property>
-         <property name="whatsThis">
-          <string>Vertical distance of labels</string>
-         </property>
-         <property name="maximum">
-          <number>2000</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QSlider" name="verticalSlider_3">
+       <property name="statusTip">
+        <string>Staircase-like offset: </string>
+       </property>
+       <property name="whatsThis">
+        <string>Staircase-like offset</string>
+       </property>
+       <property name="minimum">
+        <number>-1000</number>
+       </property>
+       <property name="maximum">
+        <number>1000</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -102,7 +130,7 @@
      <x>0</x>
      <y>0</y>
      <width>640</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

@@ -12,32 +12,80 @@ Overlay::Overlay(QWidget *parent) : QWidget(parent)
     });
     tmr.start();
     showFullScreen();
-    layout = new QFormLayout(this);
-    KillsSoFar=new QLabel();
-    StackHeight=new QLabel();
-    progress=new QLabel();
-    stackHeightData=new QLabel();
-    KillsSoFar->setText("Kills so far: ");
-    StackHeight->setText("Stack height");
-    progress->setText("0");
-    stackHeightData->setText("0");
-    layout->addRow(KillsSoFar,progress);
-    layout->addRow(StackHeight,stackHeightData);
-    layout->setGeometry(QRect(0,0,200,200));
+    layout = new QGridLayout(this);
+    CombatStatProperties=new UiProperties(&CombatStats);
+    CombatStatProperties->insert(0,0,new QLabel("0"));
+    CombatStatProperties->insert(0,1,CreateIconLabel(":/icons/Resources/Logos/Mission.svg","#FF7100",20,20));
+    CombatStatProperties->insert(1,0,new QLabel("0"));
+    CombatStatProperties->insert(1,1,CreateIconLabel(":/icons/Resources/Logos/Money.svg","#0A8BD6",20,20));
+    CombatStatProperties->addToLayout(layout);
+    layout->setGeometry(QRect(0,0,0,0));
+}
+
+Overlay::~Overlay() {
+    for (auto label:CombatStats) {
+        delete label.second;
+    }
 }
 
 void Overlay::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
-
-    //painter.fillRect(px,py,wx,wy,Qt::red);
-
-    KillsSoFar->move(px,py);
-    StackHeight->move(px,py+(dy));
-    progress->move(px+(dx),py);
-    stackHeightData->move(px+(dx),py+(dy));
-
-    //++px;
-    //++py;
+    CombatStatProperties->move();
 }
 
+void Overlay::showAll()
+{
+    //Not implemented yet
+}
+
+json Overlay::GetUserConfig()
+{
+    json conf;
+    json & CombatStats=conf["Combat Statistic config"];
+    CombatStats["Px"]=CombatStatProperties->getPx();
+    CombatStats["Py"]=CombatStatProperties->getPy();
+    CombatStats["Dx"]=CombatStatProperties->getDx();
+    CombatStats["Dy"]=CombatStatProperties->getDy();
+    CombatStats["ODy"]=CombatStatProperties->getODy();
+    return conf;
+}
+
+QLabel* Overlay::CreateIconLabel(QString resourcepath, QString _color,unsigned w,unsigned h) {
+    auto labelIcon=new QLabel();
+    QIcon icon(resourcepath);
+    QPixmap pixmap = icon.pixmap(QSize(w,h));
+    QImage tmp = pixmap.toImage();
+    QColor color(_color);
+    for(int y = 0; y < tmp.height(); y++) {
+        for(int x= 0; x < tmp.width(); x++) {
+            color.setAlpha(tmp.pixelColor(x,y).alpha());
+            tmp.setPixelColor(x,y,color);
+        }
+    }
+    pixmap = QPixmap::fromImage(tmp);
+    labelIcon->setPixmap(pixmap);
+    labelIcon->setContentsMargins(0,0,20,20);
+    return labelIcon;
+}
+
+//void Overlay::toggleVisibility() {
+//    if (Visible) {
+//        Visible=false;
+//        this->hide();
+//    } else {
+//        Visible=true;
+//        showFullScreen();
+//    }
+//}
+
+//void Overlay::setVisibility(bool v)
+//{
+//    if (v) {
+//        Visible=true;
+//        showFullScreen();
+//    } else {
+//        Visible=false;
+//        this->hide();
+//    }
+//}

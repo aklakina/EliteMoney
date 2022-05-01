@@ -11,7 +11,10 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Elite Money</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -32,8 +35,14 @@
       </item>
       <item>
        <widget class="QLabel" name="systemName">
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 113, 0);</string>
+        </property>
         <property name="text">
-         <string>System</string>
+         <string>SYSTEM</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::AutoText</enum>
         </property>
        </widget>
       </item>
@@ -55,78 +64,54 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
-       <widget class="QTabWidget" name="tabWidget">
-        <property name="enabled">
-         <bool>true</bool>
+       <widget class="QTableWidget" name="tableWidget">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
         </property>
-        <property name="autoFillBackground">
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 113, 0);
+border-color: rgb(255, 113, 0);
+background-color: transparent;
+QTableCornerButton::section { background-color:transparent; };
+QHeaderView::section {color:(255, 113, 0);background-color: transparent;};</string>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::WinPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>2</number>
+        </property>
+        <property name="showGrid">
          <bool>false</bool>
         </property>
-        <property name="tabPosition">
-         <enum>QTabWidget::West</enum>
+        <property name="gridStyle">
+         <enum>Qt::NoPen</enum>
         </property>
-        <property name="currentIndex">
-         <number>0</number>
+        <property name="cornerButtonEnabled">
+         <bool>false</bool>
         </property>
-        <widget class="QWidget" name="tab_3">
-         <attribute name="title">
-          <string>Stack mode</string>
-         </attribute>
-         <attribute name="toolTip">
-          <string>Here you can have a brief overview about the summed mission data for each faction</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_13">
-          <item>
-           <widget class="QTableWidget" name="tableWidget">
-            <property name="font">
-             <font>
-              <pointsize>8</pointsize>
-             </font>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Plain</enum>
-            </property>
-            <property name="showGrid">
-             <bool>false</bool>
-            </property>
-            <property name="gridStyle">
-             <enum>Qt::NoPen</enum>
-            </property>
-            <property name="cornerButtonEnabled">
-             <bool>false</bool>
-            </property>
-            <property name="columnCount">
-             <number>0</number>
-            </property>
-            <attribute name="verticalHeaderVisible">
-             <bool>false</bool>
-            </attribute>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-        <widget class="QWidget" name="tab">
-         <attribute name="title">
-          <string>Share mode</string>
-         </attribute>
-         <attribute name="toolTip">
-          <string>Here you can see each completed mission in their right place in the system hierarchy.</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_11">
-          <item>
-           <widget class="QTreeWidget" name="treeWidget">
-            <column>
-             <property name="text">
-              <string notr="true">1</string>
-             </property>
-            </column>
-           </widget>
-          </item>
-         </layout>
-        </widget>
+        <property name="columnCount">
+         <number>2</number>
+        </property>
+        <attribute name="horizontalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="horizontalHeaderHighlightSections">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <column/>
+        <column/>
        </widget>
       </item>
       <item>
@@ -143,14 +128,17 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 113, 0);</string>
+        </property>
         <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
+         <enum>QFrame::WinPanel</enum>
         </property>
         <property name="frameShadow">
          <enum>QFrame::Plain</enum>
         </property>
         <property name="lineWidth">
-         <number>0</number>
+         <number>2</number>
         </property>
         <property name="animated">
          <bool>true</bool>
@@ -176,6 +164,9 @@
        <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
          <widget class="QLabel" name="label_6">
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 113, 0);</string>
+          </property>
           <property name="text">
            <string>Number of theoretycal kills:</string>
           </property>
@@ -207,6 +198,9 @@
        <layout class="QHBoxLayout" name="horizontalLayout_8">
         <item>
          <widget class="QLabel" name="label_7">
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 113, 0);</string>
+          </property>
           <property name="text">
            <string>Reward for these kills</string>
           </property>
@@ -227,6 +221,9 @@
         </item>
         <item>
          <widget class="QLabel" name="Reward">
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 113, 0);</string>
+          </property>
           <property name="text">
            <string>0</string>
           </property>
@@ -234,6 +231,9 @@
         </item>
         <item>
          <widget class="QLabel" name="label_13">
+          <property name="styleSheet">
+           <string notr="true">color: rgb(255, 113, 0);</string>
+          </property>
           <property name="text">
            <string>$ K</string>
           </property>
@@ -263,6 +263,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_15">
             <item>
              <widget class="QLabel" name="label_16">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Missions Completed</string>
               </property>
@@ -283,6 +286,9 @@
             </item>
             <item>
              <widget class="QLabel" name="Missions_completed">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>0</string>
               </property>
@@ -294,6 +300,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_16">
             <item>
              <widget class="QLabel" name="label_17">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Current Payout</string>
               </property>
@@ -314,6 +323,9 @@
             </item>
             <item>
              <widget class="QLabel" name="Curr_payout">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>0</string>
               </property>
@@ -321,6 +333,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_19">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>$ K</string>
               </property>
@@ -332,6 +347,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
              <widget class="QLabel" name="label_2">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Total payout</string>
               </property>
@@ -352,6 +370,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_8">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>TextLabel</string>
               </property>
@@ -359,6 +380,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_3">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>$ k</string>
               </property>
@@ -370,6 +394,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
              <widget class="QLabel" name="label_4">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Total number of kills needed</string>
               </property>
@@ -390,6 +417,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_9">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>TextLabel</string>
               </property>
@@ -405,6 +435,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_7">
             <item>
              <widget class="QLabel" name="label_15">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Mission completed (theoretycal)</string>
               </property>
@@ -425,6 +458,9 @@
             </item>
             <item>
              <widget class="QLabel" name="max_theoretycal">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>0</string>
               </property>
@@ -436,6 +472,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_17">
             <item>
              <widget class="QLabel" name="label_18">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Should I continue the Hunting</string>
               </property>
@@ -456,6 +495,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_20">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Yes</string>
               </property>
@@ -467,6 +509,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <widget class="QLabel" name="label">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Efficiency</string>
               </property>
@@ -487,6 +532,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_10">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>TextLabel</string>
               </property>
@@ -498,6 +546,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
              <widget class="QLabel" name="label_5">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>Estimated credit per kill</string>
               </property>
@@ -518,6 +569,9 @@
             </item>
             <item>
              <widget class="QLabel" name="label_11">
+              <property name="styleSheet">
+               <string notr="true">color: rgb(255, 113, 0);</string>
+              </property>
               <property name="text">
                <string>TextLabel</string>
               </property>
@@ -535,6 +589,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_11">
           <item>
            <widget class="QLabel" name="label_12">
+            <property name="styleSheet">
+             <string notr="true">color: rgb(255, 113, 0);</string>
+            </property>
             <property name="text">
              <string>Total kills you have made so far</string>
             </property>
@@ -555,6 +612,9 @@
           </item>
           <item>
            <widget class="QLabel" name="kills_made">
+            <property name="styleSheet">
+             <string notr="true">color: rgb(255, 113, 0);</string>
+            </property>
             <property name="text">
              <string>TextLabel</string>
             </property>
@@ -566,6 +626,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_12">
           <item>
            <widget class="QLabel" name="label_14">
+            <property name="styleSheet">
+             <string notr="true">color: rgb(255, 113, 0);</string>
+            </property>
             <property name="text">
              <string>How many more kills you need</string>
             </property>
@@ -586,6 +649,9 @@
           </item>
           <item>
            <widget class="QLabel" name="kills_left">
+            <property name="styleSheet">
+             <string notr="true">color: rgb(255, 113, 0);</string>
+            </property>
             <property name="text">
              <string>TextLabel</string>
             </property>
@@ -599,6 +665,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="pushButton">
+      <property name="styleSheet">
+       <string notr="true">color: rgb(255, 113, 0);</string>
+      </property>
       <property name="text">
        <string>Copy Full Data to your clipboard</string>
       </property>
@@ -606,6 +675,9 @@
     </item>
     <item>
      <widget class="QPushButton" name="Copy_data">
+      <property name="styleSheet">
+       <string notr="true">color: rgb(255, 113, 0);</string>
+      </property>
       <property name="text">
        <string>Copy Completed Data to your clipboard</string>
       </property>
@@ -620,7 +692,7 @@
      <x>0</x>
      <y>0</y>
      <width>1452</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFiles">
@@ -636,7 +708,7 @@
     <property name="title">
      <string>View</string>
     </property>
-    <addaction name="actionEdit_overlay"/>
+    <addaction name="actionEdit_Overlay"/>
    </widget>
    <addaction name="menuFiles"/>
    <addaction name="menuView"/>
@@ -656,9 +728,9 @@
     <string>Start new session</string>
    </property>
   </action>
-  <action name="actionEdit_overlay">
+  <action name="actionEdit_Overlay">
    <property name="text">
-    <string>Edit overlay...</string>
+    <string>Edit Overlay...</string>
    </property>
   </action>
  </widget>

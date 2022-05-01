@@ -26,6 +26,8 @@ private slots:
 
     void on_verticalSlider_2_valueChanged(int value);
 
+    void on_verticalSlider_3_valueChanged(int value);
+
 private:
     Ui::OverlayEditor *ui;
     Overlay * ol;

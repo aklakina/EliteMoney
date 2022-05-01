@@ -348,3 +348,88 @@ void GlobalFactions::MissionAdded(mission *m)
 }
 
 #pragma }
+
+UiProperties::UiProperties(map<pair<unsigned,unsigned>,QLabel*> *_labels) : labels(_labels) {}
+
+void UiProperties::move() {
+    for (auto label:*labels) {
+        label.second->move(px+label.first.second*dx+label.second->pixmap().width()/2,py+label.first.first*dy+label.first.second*ody+label.second->pixmap().height()/2);
+    }
+}
+
+void UiProperties::setSize(unsigned _col, unsigned _row) {
+    col=_col;
+    row=_row;
+}
+
+pair<map<pair<unsigned,unsigned>,QLabel*>::iterator, bool> UiProperties::insert(unsigned _col, unsigned _row, QLabel *label) {
+    pair<map<pair<unsigned,unsigned>,QLabel*>::iterator,bool> _ret={labels->end(),false};
+    if (_col<col || _row < row) {
+        return _ret;
+    } else {
+        return labels->insert({{_col,_row},label});
+    }
+}
+
+void UiProperties::addToLayout(QGridLayout *layout) {
+    for (auto label:*labels) {
+        layout->addWidget(label.second,label.first.second,label.first.first);
+    }
+}
+
+void UiProperties::setPos(unsigned _px, unsigned _py, unsigned _dx, unsigned _dy, unsigned _ody)
+{
+    px=_px;
+    py=_py;
+    dx=_dx;
+    dy=_dy;
+    ody=_ody;
+}
+
+void UiProperties::setPx(unsigned _px) {
+    px=_px;
+}
+
+void UiProperties::setPy(unsigned _py) {
+    py=_py;
+}
+
+void UiProperties::setDx(unsigned _dx) {
+    dx=_dx;
+}
+
+void UiProperties::setDy(unsigned _dy) {
+    dy=_dy;
+}
+
+void UiProperties::setODy(unsigned _ody) {
+    ody=_ody;
+}
+
+unsigned UiProperties::getPx() {
+    return px;
+}
+
+unsigned UiProperties::getPy() {
+    return py;
+}
+
+unsigned UiProperties::getDx() {
+    return dx;
+}
+
+unsigned UiProperties::getDy() {
+    return dy;
+}
+
+unsigned UiProperties::getODy() {
+    return ody;
+}
+
+void UiProperties::setText(unsigned _col, unsigned _row, QString text) {
+    if (_col<col || _row < row) {
+        return;
+    } else {
+        labels->at({_col,_row})->setText(text);
+    }
+}

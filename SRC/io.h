@@ -3,7 +3,6 @@
 
 #include "containerobject.h"
 
-#include "json.hpp"
 
 #include <QObject>
 #include <QDir>
@@ -19,11 +18,11 @@ using namespace std;
 using namespace techlevi;
 
 namespace techlevi {
-class API : public QObject
+class IO: public QObject
 {
     Q_OBJECT
 public:
-    explicit API(QObject *parent = nullptr);
+    explicit IO(QObject *parent = nullptr);
 
     QStringList originalContent;
 
@@ -37,7 +36,7 @@ private:
 
     QTime LastEventDate;
 
-
+    void LoadUIConfig(QString path);
 
     void GetMissions();
 
@@ -47,9 +46,7 @@ public:
 
     void HandleEvent(json event);
 
-    void SaveData(QString file);
-
-    void LoadData(QString filePath);
+    void init();
 
 public slots:
 
@@ -57,6 +54,13 @@ public slots:
 
     void OnNewFile(const QString &file);
 
+    void SaveData(QString file);
+
+    void LoadData(QString filePath);
+
+    void SaveOverlayConfig(json conf);
+
+    void SendUIConfig(json * conf);
 
 signals:
 
@@ -87,6 +91,7 @@ signals:
     void unDocked();
 
     void JumpedToSystem(QString name);
+
 };
 }
 #endif // API_H

@@ -3,6 +3,7 @@
         <file>Resources/Logos/elite-dangerous-vektor.svg</file>
         <file>Resources/Logos/Money.svg</file>
         <file>Resources/Logos/Wing.svg</file>
+        <file>Resources/Logos/Mission.svg</file>
     </qresource>
     <qresource prefix="/fonts">
         <file>Resources/Fonts/EUROCAPS.TTF</file>

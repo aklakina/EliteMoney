@@ -1,24 +1,12 @@
-#include "api.h"
+#include "io.h"
 #include "data.h"
 
-API::API(QObject * parent) : QObject(parent)
+IO::IO(QObject * parent) : QObject(parent)
 {
-    QDir saves(QDir::currentPath()+"/System/");
-    if (!saves.exists()) {
-        QDir().mkdir(saves.path());
-    }
-    QDateTime a=saves.entryInfoList().begin()->lastModified();
-    QString c=saves.entryInfoList().begin()->canonicalFilePath();
-    for (auto const & i:saves.entryInfoList()) {
-        if (a<i.lastModified()) {
-            a=i.lastModified();
-            c=i.canonicalFilePath();
-        }
-    }
-    LoadData(c);
+
 }
 
-void API::OnNewFile(const QString &file) {
+void IO::OnNewFile(const QString &file) {
     QDir directory(file);
     QString full;
     bool found=false;
@@ -40,8 +28,7 @@ void API::OnNewFile(const QString &file) {
     emit AddFileToFSWatcher(full);
 }
 
-void API::OnNewEvent(const QString &file) {
-    //Sleep(3000);
+void IO::OnNewEvent(const QString &file) {
     QFile changed(file);
     qDebug()<<"event started file opened";
     if (changed.open(QIODevice::ReadOnly)) {
@@ -70,7 +57,7 @@ void API::OnNewEvent(const QString &file) {
 }
 
 
-void API::GetMissions() {
+void IO::GetMissions() {
     GettingMissions=true;
     QStringList path1=QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
     QDir base(path1.first()+"/Saved Games/Frontier Developments/Elite Dangerous");
@@ -92,7 +79,7 @@ void API::GetMissions() {
     delete res;
 }
 
-void API::OnEvent(json event) {
+void IO::OnEvent(json event) {
     try {
         if ((string)event["event"]=="MissionAccepted" && ((string)event["Name"]).find("Massacre")!=string::npos) {
             /*{ "timestamp":"2021-03-10T14:58:54Z"
@@ -232,29 +219,74 @@ void API::OnEvent(json event) {
     }
 }
 
-void API::SaveData(QString file)
+void IO::init()
 {
+    QDir saves(QDir::currentPath()+"/System/");
+    if (!saves.exists()) {
+        QDir().mkdir(saves.path());
+    }
+    QDateTime a=saves.entryInfoList().begin()->lastModified();
+    QString c=saves.entryInfoList().begin()->canonicalFilePath();
+    for (auto const & i:saves.entryInfoList()) {
+        if (a<i.lastModified()) {
+            a=i.lastModified();
+            c=i.canonicalFilePath();
+        }
+        if (c==QDir::currentPath()+"/System" || c==QDir::currentPath()+"/System/." || c==QDir::currentPath()+"/System/..") {
+            a=i.lastModified();
+            c=i.canonicalFilePath();
+        }
+    }
+    LoadData(c);
+}
+
+void IO::SaveData(QString file)
+{
+    string * temp=new string();
+    *temp="";
+    emit requestJson(temp);
+    if (*temp=="" || *temp=="null") {
+        return;
+    }
+    QString output=QString::fromStdString(*temp);
+    delete temp;
+
     QFile Qfile(file);
     if (Qfile.open(QIODevice::WriteOnly)) {
         QTextStream stream(&Qfile);
-        string * temp=new string();
-        *temp="";
-        emit requestJson(temp);
-        QString output=QString::fromStdString(*temp);
-        delete temp;
         stream<<output;
     } else {
         throw "Could not open file for write";
     }
 }
 
-void API::LoadData(QString filePath)
+void IO::LoadData(QString filePath)
 {
-        QFile f(filePath);
-        if (f.open(QIODevice::ReadOnly)) {
-            QTextStream stream(&f);
-            json config= json::parse(stream.readAll().toStdString());
-            emit provideJson(config);
-        }
+    QFile f(filePath);
+    if (f.open(QIODevice::ReadOnly)) {
+        QTextStream stream(&f);
+        json config= json::parse(stream.readAll().toStdString());
+        emit provideJson(config);
+    }
+}
+
+void IO::SaveOverlayConfig(json conf)
+{
+    QFile file(QDir::current().canonicalPath()+"/overlay.json");
+    if (file.open(QIODevice::WriteOnly)) {
+        QTextStream stream(&file);
+        stream<<QString::fromStdString(conf.dump(4));
+        file.close();
+    }
+}
+
+void IO::SendUIConfig(json *conf)
+{
+    QFile file(QDir::current().canonicalPath()+"/overlay.json");
+    if (file.open(QIODevice::ReadOnly)) {
+        QTextStream stream(&file);
+        *conf=json::parse(stream.readAll().toStdString());
+        file.close();
+    }
 }
 

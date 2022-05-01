@@ -8,8 +8,7 @@ data::data(QObject* parent):QObject(parent) {
 
 }
 
-void data::Init(Ui::MainWindow *Mui, API *parent_api) {
-    this->api=parent_api;
+void data::Init(Ui::MainWindow *Mui) {
     this->ui=Mui;
 }
 
@@ -29,14 +28,11 @@ void data::missionCompleted(unsigned ID,bool remove) {
         globalFactions->totalMissionCount-=1;
         auto oldStackHeight=globalFactions->stackHeight;
         globalFactions->totalKillsSoFar-=oldStackHeight-globalFactions->reCalcStackHeight();
-        emit Refresh(*globalFactions,*CompleteData);
         emit RefreshTable(*globalFactions);
         emit UpdateTree((AdvancedContainer<ContainerObject>*) CompleteData);
         ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()+1));
     } else {
-        ui->treeWidget->clear();
         RemoveMission(&ID);
-        emit Refresh(*globalFactions,*CompleteData,true,mission);
         emit RefreshTable(*globalFactions);
         ui->Missions_completed->setText(QString::number(ui->Missions_completed->text().toInt()-1));
     }
@@ -88,6 +84,11 @@ void data::Docked(QString System, QString Station)
 {
     CurrentStation=new currentStation(Station);
     CurrentStation->systemName=System;
+    auto missions=getStationMissionData();
+    missions.shrink_to_fit();
+    if (missions.size()>0) {
+        emit BuildStationMissionData(missions);
+    }
 }
 
 void data::unDocked()
@@ -95,6 +96,11 @@ void data::unDocked()
     if (CurrentStation!=nullptr) {
         delete CurrentStation;
         CurrentStation=nullptr;
+    }
+    auto missions=getCompletedMissionData();
+    missions.shrink_to_fit();
+    if (missions.size()>0) {
+        emit BuildCompletedMissionData(missions);
     }
 }
 
@@ -104,6 +110,7 @@ void data::JumpedToSystem(QString system)
     for (auto TSystem:*CompleteData) {
         if (TSystem->name==system) {
             Session=TSystem;
+            emit RefreshTable(*globalFactions);
             found=true;
             break;
         }
@@ -141,6 +148,7 @@ void data::GetSession(huntedSystem *&input)
 
 void data::RemoveMission(unsigned *ID) {
     auto res=globalFactions->findMission(*ID);
+    ui->label_8->setText(QString::number(ui->label_8->text().toDouble()-(*res.missionPlace)->payout));
     (*res.factionPlace)->removeMission(*res.missionPlace);
     if (!(*res.factionPlace)->hasMissions()) {
         globalFactions->remove(res.factionPlace);
@@ -148,7 +156,6 @@ void data::RemoveMission(unsigned *ID) {
 }
 
 void data::addMission(string dest,int kills, double reward, unsigned ID, bool wing,QString Sfaction, QString Tfaction, QDateTime AcceptanceTime, QDateTime Expiry) {
-    ui->treeWidget->clear();
     Input input;
     input.MID=ID;
     input.SFaction=Sfaction;
@@ -331,6 +338,9 @@ void data::getUnifiedStatistics(Statistics* input)
 }
 
 void data::getJsonFormattedData(string* input) {
+    if (CompleteData==nullptr) {
+        return;
+    }
     json Data;
     RecursiveDataReader((AdvancedContainer<ContainerObject>*)CompleteData,Data);
     if (CurrentStation!=nullptr) {
@@ -350,7 +360,6 @@ void data::LoadDataFromJson(json &input)
     globalFactions->reCalcTotalKills();
     globalFactions->reCalcTotalPayout();
     emit UpdateTree((AdvancedContainer<ContainerObject>*)CompleteData);
-    emit Refresh(*globalFactions,*CompleteData);
     emit RefreshUI(false);
 }
 
@@ -471,4 +480,38 @@ void data::refreshdata(int depth,json *SavedData, techlevi::Input * input, techl
             delete Prev;
         }
     }
+}
+
+vector<mission*> data::getStationMissionData()
+{
+    for (auto TSystem:*CompleteData) {
+        for (auto SSystem:*TSystem) {
+            if (SSystem->name==CurrentStation->systemName) {
+                for (auto SStation:*SSystem) {
+                    if (SStation->name==CurrentStation->name) {
+                        vector<mission*> _ret;
+                        for (auto faction:*SStation) {
+                            for (auto mission:faction->getMissionsbyDate()) {
+                                if (mission->Completed) _ret.push_back(mission);
+                            }
+                        }
+                        return _ret;
+                    }
+                }
+            }
+        }
+    }
+    vector<mission*> _ret;
+    return _ret;
+}
+
+vector<mission *> data::getCompletedMissionData()
+{
+    vector<mission*> _ret;
+    for (auto faction:*globalFactions) {
+        for (auto mission:faction->getMissionsbyDate()) {
+            if (mission->Completed) _ret.push_back(mission);
+        }
+    }
+    return _ret;
 }

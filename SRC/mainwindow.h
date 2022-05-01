@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 
-#include "api.h"
+#include "io.h"
 #include "data.h"
 #include "overlay.h"
 #include "overlayeditor.h"
@@ -13,6 +13,7 @@
 #include <QFileSystemWatcher>
 #include <QFont>
 #include <QFontDatabase>
+#include <QCloseEvent>
 #include <QKeyEvent>
 
 using json=nlohmann::json;
@@ -49,12 +50,11 @@ private slots:
 
     void on_pushButton_clicked();
 
-    void on_actionEdit_overlay_triggered();
-
+    void on_actionEdit_Overlay_triggered();
 
 private:
     Ui::MainWindow *ui;
-    API* api;
+    IO* io;
     techlevi::data* Data;
     EventDistributor *ev;
     OverlayEditor* olEdit;
@@ -65,6 +65,9 @@ private:
     bool SearchTreeRecursively(QTreeWidgetItem* item,QString name);
     void ExpandChildsToo(QTreeWidgetItem* item);
     void RetractAll(QTreeWidgetItem* item);
+    void closeEvent (QCloseEvent *event) override;
+    void LoadOverlayData();
+    void applyTableStyle();
     Overlay *ol;
     QIcon *wing;
     QFont *Header;
@@ -72,37 +75,44 @@ private:
     QFont *Numbers;
     QFont *Tree;
 
+
 public slots:
 
-    void completedData(GlobalFactions const & data, HuntedSystems const & CompleteData, bool deleted=false, mission const * m=nullptr);
+    //void completedData(GlobalFactions const & data, HuntedSystems const & CompleteData, bool deleted=false, mission const * m=nullptr);
 
-    void RefreshTree(GlobalFactions const & GlobalFactions);
+    void RefreshTree(techlevi::GlobalFactions const & GlobalFactions);
 
     void Refresh_UI(bool switcher);
 
     void addTreeItem(QString name);
 
-    void RebuildTree(AdvancedContainer<ContainerObject> *CompleteData, QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
+    void RebuildTree(techlevi::AdvancedContainer<techlevi::ContainerObject> *CompleteData, QTreeWidgetItem* item=nullptr,bool do_not_search=false,int depth=0);
 
-    void RefreshTable(GlobalFactions const & data);
+    void RefreshTable(techlevi::GlobalFactions const & data);
 
     void ExpandTree(QString name);
 
-    void keyPressEvent( QKeyEvent *k );
+    void buildStationMissionData(vector<techlevi::mission*> const & data);
+
+    void buildCompletedMissionData(vector<techlevi::mission*> const & data);
 
 signals:
 
     void SaveData(QString path);
 
-    void requestStatistics(map<huntedSystem*,Statistics> *& stats);
+    void requestStatistics(map<techlevi::huntedSystem*,techlevi::Statistics> *& stats);
 
-    void requestUnifiedStatistics(Statistics * stats);
+    void requestUnifiedStatistics(techlevi::Statistics * stats);
 
     void LoadData(QString path);
 
-    void requestTheorData(int const & theorKills,TheoreticalResults & _ret);
+    void requestTheorData(int const & theorKills,techlevi::TheoreticalResults & _ret);
 
-    void requestSession(huntedSystem *& input);
+    void requestSession(techlevi::huntedSystem *& input);
+
+    void SaveUIConfig(json conf);
+
+    void getOverlayData(json * conf);
 
 };
 
@@ -118,11 +128,11 @@ private:
     QFileSystemWatcher *notifier;
     techlevi::data *Data;
     MainWindow *mw;
-    API *api;
+    IO *io;
 
 public:
     explicit EventDistributor(QObject *parent = nullptr);
-    EventDistributor(MainWindow * MW,API * api,techlevi::data *data);
+    EventDistributor(MainWindow * MW,IO * api,techlevi::data *data);
 signals:
 
 private slots:

@@ -2,12 +2,18 @@
 #define CONTAINEROBJECT_H
 
 #pragma Includes {
+
+#include "json.hpp"
+
 #include <set>
 #include <map>
-#include <QString>
-#include <QObject>
+#include <QLabel>
 #include <QDebug>
 #include <QDateTime>
+#include <QGridLayout>
+#include <QStyle>
+
+using json=nlohmann::json;
 
 using namespace std;
 #pragma }
@@ -19,6 +25,36 @@ class faction;
 class huntedSystem;
 class mission;
 class TargetedFaction;
+class UiProperties {
+    unsigned col=0,row=0;
+    unsigned px=0;
+    unsigned py=0;
+    unsigned dy=50;
+    unsigned dx=100;
+    unsigned ody=0;
+    map<pair<unsigned,unsigned>,QLabel*>* labels=nullptr;
+public:
+    UiProperties(map<pair<unsigned,unsigned>,QLabel*>* _labels);
+    void move();
+
+    void setSize(unsigned _col,unsigned _row);
+
+    pair<map<pair<unsigned,unsigned>,QLabel*>::iterator,bool> insert(unsigned _col,unsigned _row,QLabel* label);
+
+    void addToLayout(QGridLayout* layout);
+    void setPos(unsigned _px, unsigned _py, unsigned _dx, unsigned _dy, unsigned _ody);
+    void setPx(unsigned _px);
+    void setPy(unsigned _py);
+    void setDx(unsigned _dx);
+    void setDy(unsigned _dy);
+    void setODy(unsigned _ody);
+    unsigned getPx();
+    unsigned getPy();
+    unsigned getDx();
+    unsigned getDy();
+    unsigned getODy();
+    void setText(unsigned _col,unsigned _row, QString text);
+};
 struct Input {
     QString TSystem, SSystem, SFaction, SStation, TFaction;
     QDateTime AcceptanceTime,Expiry;
