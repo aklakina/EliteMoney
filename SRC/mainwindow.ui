@@ -701,8 +701,6 @@ QHeaderView::section {color:(255, 113, 0);background-color: transparent;};</stri
     </property>
     <addaction name="actionSave_Session"/>
     <addaction name="actionLoad_session"/>
-    <addaction name="separator"/>
-    <addaction name="actionStart_new_session"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -721,11 +719,6 @@ QHeaderView::section {color:(255, 113, 0);background-color: transparent;};</stri
   <action name="actionLoad_session">
    <property name="text">
     <string>Load session...</string>
-   </property>
-  </action>
-  <action name="actionStart_new_session">
-   <property name="text">
-    <string>Start new session</string>
    </property>
   </action>
   <action name="actionEdit_Overlay">

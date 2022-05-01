@@ -27,11 +27,11 @@ class mission;
 class TargetedFaction;
 class UiProperties {
     unsigned col=0,row=0;
-    unsigned px=0;
-    unsigned py=0;
-    unsigned dy=50;
-    unsigned dx=100;
-    unsigned ody=0;
+    int px=0;
+    int py=0;
+    int dy=50;
+    int dx=100;
+    int ody=0;
     map<pair<unsigned,unsigned>,QLabel*>* labels=nullptr;
 public:
     UiProperties(map<pair<unsigned,unsigned>,QLabel*>* _labels);
@@ -42,17 +42,17 @@ public:
     pair<map<pair<unsigned,unsigned>,QLabel*>::iterator,bool> insert(unsigned _col,unsigned _row,QLabel* label);
 
     void addToLayout(QGridLayout* layout);
-    void setPos(unsigned _px, unsigned _py, unsigned _dx, unsigned _dy, unsigned _ody);
-    void setPx(unsigned _px);
-    void setPy(unsigned _py);
-    void setDx(unsigned _dx);
-    void setDy(unsigned _dy);
-    void setODy(unsigned _ody);
-    unsigned getPx();
-    unsigned getPy();
-    unsigned getDx();
-    unsigned getDy();
-    unsigned getODy();
+    void setPos(int _px, int _py, int _dx, int _dy, int _ody);
+    void setPx(int _px);
+    void setPy(int _py);
+    void setDx(int _dx);
+    void setDy(int _dy);
+    void setODy(int _ody);
+    int getPx();
+    int getPy();
+    int getDx();
+    int getDy();
+    int getODy();
     void setText(unsigned _col,unsigned _row, QString text);
 };
 struct Input {
@@ -137,6 +137,7 @@ protected:
     set<T*, defaultPointerCmp<T>> container;
 public:
     using ContainerObject::ContainerObject;
+    ~AdvancedContainer();
     typename set<T*>::iterator begin();
     typename set<T*>::iterator end();
     const typename set<T*>::iterator begin() const;
@@ -315,6 +316,15 @@ public:
 
 #pragma Template class definitions {
 
+
+template<class T>
+AdvancedContainer<T>::~AdvancedContainer()
+{
+    for (auto object:container) {
+        container.extract(object);
+        delete object;
+    }
+}
 
 template<class T>
 typename set<T*>::iterator AdvancedContainer<T>::begin()

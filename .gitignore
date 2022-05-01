@@ -1,4 +1,4 @@
-
+build-calculator-Desktop_Qt_6_2_1_MinGW_64_bit-Release/*
 .idea/*
 build-calculator-Desktop_Qt_6_2_1_MinGW_64_bit-Debug/*
 cmake-build-debug/*

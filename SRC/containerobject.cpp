@@ -367,6 +367,7 @@ pair<map<pair<unsigned,unsigned>,QLabel*>::iterator, bool> UiProperties::insert(
     if (_col<col || _row < row) {
         return _ret;
     } else {
+        label->setAlignment(Qt::AlignRight);
         return labels->insert({{_col,_row},label});
     }
 }
@@ -377,7 +378,7 @@ void UiProperties::addToLayout(QGridLayout *layout) {
     }
 }
 
-void UiProperties::setPos(unsigned _px, unsigned _py, unsigned _dx, unsigned _dy, unsigned _ody)
+void UiProperties::setPos(int _px, int _py, int _dx, int _dy, int _ody)
 {
     px=_px;
     py=_py;
@@ -386,43 +387,43 @@ void UiProperties::setPos(unsigned _px, unsigned _py, unsigned _dx, unsigned _dy
     ody=_ody;
 }
 
-void UiProperties::setPx(unsigned _px) {
+void UiProperties::setPx(int _px) {
     px=_px;
 }
 
-void UiProperties::setPy(unsigned _py) {
+void UiProperties::setPy(int _py) {
     py=_py;
 }
 
-void UiProperties::setDx(unsigned _dx) {
+void UiProperties::setDx(int _dx) {
     dx=_dx;
 }
 
-void UiProperties::setDy(unsigned _dy) {
+void UiProperties::setDy(int _dy) {
     dy=_dy;
 }
 
-void UiProperties::setODy(unsigned _ody) {
+void UiProperties::setODy(int _ody) {
     ody=_ody;
 }
 
-unsigned UiProperties::getPx() {
+int UiProperties::getPx() {
     return px;
 }
 
-unsigned UiProperties::getPy() {
+int UiProperties::getPy() {
     return py;
 }
 
-unsigned UiProperties::getDx() {
+int UiProperties::getDx() {
     return dx;
 }
 
-unsigned UiProperties::getDy() {
+int UiProperties::getDy() {
     return dy;
 }
 
-unsigned UiProperties::getODy() {
+int UiProperties::getODy() {
     return ody;
 }
 
