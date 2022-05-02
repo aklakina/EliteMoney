@@ -16,7 +16,7 @@
 #include <QCloseEvent>
 #include <QKeyEvent>
 
-using json=nlohmann::json;
+//using json=nlohmann::json;
 using namespace std;
 
 QT_BEGIN_NAMESPACE
@@ -110,9 +110,9 @@ signals:
 
     void requestSession(techlevi::huntedSystem *& input);
 
-    void SaveUIConfig(json conf);
+    void SaveUIConfig(std::string conf);
 
-    void getOverlayData(json * conf);
+    void getOverlayData(std::string * conf);
 
 };
 

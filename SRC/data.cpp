@@ -350,11 +350,10 @@ void data::getJsonFormattedData(string* input) {
     *input=Data.dump(4);
 }
 
-void data::LoadDataFromJson(json &input)
+void data::LoadDataFromJson(std::string &input)
 {
-    auto temp=new json(input);
-    refreshdata(0,temp);
-    delete temp;
+    auto temp=json::parse(input);
+    refreshdata(0,&temp);
     emit RefreshTable(*globalFactions);
     globalFactions->reCalcStackHeight();
     globalFactions->reCalcTotalKills();

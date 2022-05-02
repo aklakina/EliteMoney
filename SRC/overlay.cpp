@@ -39,7 +39,7 @@ void Overlay::showAll()
     //Not implemented yet
 }
 
-json Overlay::GetUserConfig()
+std::string Overlay::GetUserConfig()
 {
     json conf;
     json & CombatStats=conf["Combat Statistic config"];
@@ -48,7 +48,7 @@ json Overlay::GetUserConfig()
     CombatStats["Dx"]=CombatStatProperties->getDx();
     CombatStats["Dy"]=CombatStatProperties->getDy();
     CombatStats["ODy"]=CombatStatProperties->getODy();
-    return conf;
+    return conf.dump(4);
 }
 
 QLabel* Overlay::CreateIconLabel(QString resourcepath, QString _color,unsigned w,unsigned h) {
@@ -68,24 +68,3 @@ QLabel* Overlay::CreateIconLabel(QString resourcepath, QString _color,unsigned w
     labelIcon->setContentsMargins(0,0,20,20);
     return labelIcon;
 }
-
-//void Overlay::toggleVisibility() {
-//    if (Visible) {
-//        Visible=false;
-//        this->hide();
-//    } else {
-//        Visible=true;
-//        showFullScreen();
-//    }
-//}
-
-//void Overlay::setVisibility(bool v)
-//{
-//    if (v) {
-//        Visible=true;
-//        showFullScreen();
-//    } else {
-//        Visible=false;
-//        this->hide();
-//    }
-//}

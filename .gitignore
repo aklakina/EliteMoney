@@ -1,6 +1,5 @@
-build-calculator-Desktop_Qt_6_2_1_MinGW_64_bit-Release/*
+build*/*
 .idea/*
-build-calculator-Desktop_Qt_6_2_1_MinGW_64_bit-Debug/*
 cmake-build-debug/*
 SRC/calculator.pro.user.2d4dc9d
 SRC/eventdistributer.h

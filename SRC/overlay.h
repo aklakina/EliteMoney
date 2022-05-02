@@ -35,7 +35,7 @@ public:
 
     void showAll();
 
-    json GetUserConfig();
+    std::string GetUserConfig();
 
     /*void toggleVisibility();
 

@@ -77,7 +77,7 @@ namespace techlevi {
 
         void getJsonFormattedData(std::string * input);
 
-        void LoadDataFromJson(json & input);
+        void LoadDataFromJson(std::string & input);
 
         void addMission(std::string dest,int kills, double reward, unsigned ID, bool wing,QString Sfaction, QString Tfaction, QDateTime AcceptanceTime, QDateTime Expiry);
 

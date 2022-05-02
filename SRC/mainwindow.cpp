@@ -249,8 +249,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::LoadOverlayData()
 {
-    json olConf;
-    emit getOverlayData(&olConf);
+    std::string olConfstr;
+    emit getOverlayData(&olConfstr);
+    json olConf=json::parse(olConfstr);
     json CombatStatData=olConf["Combat Statistic config"];
     ol->CombatStatProperties->setPos(CombatStatData["Px"],CombatStatData["Py"],CombatStatData["Dx"],CombatStatData["Dy"],CombatStatData["ODy"]);
 }

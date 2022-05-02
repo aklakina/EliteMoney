@@ -58,23 +58,23 @@ public slots:
 
     void LoadData(QString filePath);
 
-    void SaveOverlayConfig(json conf);
+    void SaveOverlayConfig(std::string conf);
 
-    void SendUIConfig(json * conf);
+    void SendUIConfig(std::string * conf);
 
 signals:
 
     void missionCompleted(unsigned ID, bool remove=false);
 
-    void Signal_Event(json processed);
+    void Signal_Event(std::string processed);
 
     void addMission(string dest,int kills, double reward, unsigned ID, bool wing,QString Sfaction, QString Tfaction, QDateTime AcceptanceTime, QDateTime Expiry);
 
-    void requestStatistics(Statistics* input);
+    void requestStatistics(techlevi::Statistics* input);
 
-    void requestJson(string * input);
+    void requestJson(std::string * input);
 
-    void provideJson(json & input);
+    void provideJson(std::string & input);
 
     void MissionRedirection(unsigned ID,QString newStation);
 

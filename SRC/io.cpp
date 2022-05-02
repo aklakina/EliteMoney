@@ -265,27 +265,27 @@ void IO::LoadData(QString filePath)
     QFile f(filePath);
     if (f.open(QIODevice::ReadOnly)) {
         QTextStream stream(&f);
-        json config= json::parse(stream.readAll().toStdString());
-        emit provideJson(config);
+        string conf=stream.readAll().toStdString();
+        emit provideJson(conf);
     }
 }
 
-void IO::SaveOverlayConfig(json conf)
+void IO::SaveOverlayConfig(std::string conf)
 {
     QFile file(QDir::current().canonicalPath()+"/overlay.json");
     if (file.open(QIODevice::WriteOnly)) {
         QTextStream stream(&file);
-        stream<<QString::fromStdString(conf.dump(4));
+        stream<<QString::fromStdString(conf);
         file.close();
     }
 }
 
-void IO::SendUIConfig(json *conf)
+void IO::SendUIConfig(std::string *conf)
 {
     QFile file(QDir::current().canonicalPath()+"/overlay.json");
     if (file.open(QIODevice::ReadOnly)) {
         QTextStream stream(&file);
-        *conf=json::parse(stream.readAll().toStdString());
+        *conf=stream.readAll().toStdString();
         file.close();
     }
 }
