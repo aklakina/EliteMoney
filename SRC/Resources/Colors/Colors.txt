@@ -1,5 +1,0 @@
-base: #FF7100
-Friend: #029E4c
-Enemy: #FF0000
-ally: #0A8BD6
-Background: #F07B05
