@@ -1,2 +1,0 @@
-1.1
-https://github.com/aklakina/EliteMoney/raw/main/bin/windows/x64/EliteMoney_Setup.exe
