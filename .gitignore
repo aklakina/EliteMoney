@@ -1,5 +1,0 @@
-build*/*
-.idea/*
-cmake-build-debug/*
-SRC/calculator.pro.user.2d4dc9d
-SRC/eventdistributer.h
